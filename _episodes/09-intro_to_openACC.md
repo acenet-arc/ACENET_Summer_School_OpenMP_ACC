@@ -110,22 +110,3 @@ Compiler did not identify loops as parallelizable.
 MC:
 ml StdEnv/2020 nvhpc/20.7 cuda/11.0
 nvc laplace2d_acc.c -O3 -acc -ta=tesla -Minfo=accel,time
-
-
-
-module load StdEnv/2020 python/3.7.9 scipy-stack
-virtualenv env-phoebe
-source env-phoebe/bin/activate
-
-git clone git://github.com/astropy/astropy.git
-cd astropy
-ASTROPY_USE_SYSTEM_EXPAT=1 pip install -e .
-pip install phoebe==2.3.40
-
-
-working:
-
-module load StdEnv/2016 python
-virtualenv env-phoebe
-source env-phoebe/bin/activate
-pip install phoebe==2.3.40

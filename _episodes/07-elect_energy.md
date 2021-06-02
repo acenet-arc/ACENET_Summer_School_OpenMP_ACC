@@ -87,7 +87,9 @@ int main(int argc, char **argv)
 
 ## Performance considerations 
 
-First we need the serial version to use as a reference for calculation of parallel scaling. We will use a couple of new compiler options: turn on optimization reporting *(-qopt-report=1)* and ask for vectorization report *(-qopt-report-phase=vec)*. Intel compiler does not print this information on screen, it saves optimization reports in *\*.optrpt* files. 
+First we need the serial version to use as a reference for calculation of parallel scaling. We will use a couple of new compiler options: 
+- turn on optimization reporting *(-qopt-report=1)* 
+- ask specifically for vectorization report *(-qopt-report-phase=vec)*.   
 
 At optimization level *-O3* compiler automatically tries to vectorize code. To compile a pure serial version with the same optimization level we can turn off auto vectorization (add *-no-vec*).
 ~~~
@@ -97,7 +99,7 @@ srun -c1 ./a.out
 ~~~
 {:.language-bash}
 
-Optimization report saved in the file *elect_energy.optrpt* indicates that our main nested *for* loops computing potential energy at lines 42 and 44 are not vectorized:
+Intel compiler does not print optimization information on screen, it is saved in *\*.optrpt* files. Optimization report saved in the file *elect_energy.optrpt* indicates that our main nested *for* loops computing potential energy at lines 42 and 44 are not vectorized:
 ~~~
 LOOP BEGIN at elect_energy.c(42,2)
    remark #25460: No loop optimizations reported
@@ -115,7 +117,7 @@ srun -c1 ./a.out
 ~~~
 {:.language-bash}
 
-The runtime of the serial version is about 185/260 sec on the real and training clusters respectively.
+The runtime of the serial version is about 185/260 sec on the real/training clusters respectively.
 
 Next, recompile the code without *-no-vec* option. The optimization report indicates that the inner *for* loop at line 44 is now vectorized:
 ~~~
@@ -125,7 +127,7 @@ Next, recompile the code without *-no-vec* option. The optimization report indic
 ~~~
 {:.output}
 
-The auto vectorized program runs in about 60/80 sec on the real and training clusters respectively. This is some improvement, but not very impressive. The speedup relative to the serial version is only about 3x. The CPU is able to process 16 floating pointing numbers at once and the theoretical speedup should be 16x, right? Can we do better? 
+The auto vectorized program runs in about 60/80 sec on the real/training clusters respectively. This is some improvement, but not very impressive. The speedup relative to the serial version is only about 3x. The CPU is able to process 16 floating pointing numbers at once and the theoretical speedup should be 16x, right? Can we do better? 
 
 Use *-march=skylake-avx512* to enforce using avx512 instructions. Now it runs in 50 sec on MC, that is better (5x speedup), but still does not live up to our expectations. Can we do better? 
 
