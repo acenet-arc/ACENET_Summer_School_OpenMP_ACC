@@ -56,9 +56,6 @@ This equation describes, for example, steady-state temperature of a uniform squa
 $$ U(i,j,m+1) = ( U(i-1,j,m) + U(i+1,j,m) + U(i,j-1,m) + U(i,j+1,m) + f(i,j) )/4 $$
 
 
-http://people.eecs.berkeley.edu/~demmel/cs267/lecture24/lecture24.html
-https://nielshagoort.com/2019/03/12/exploring-the-gpu-architecture/
-
 [View NVIDIA HPC-SDK](https://docs.nvidia.com/hpc-sdk/compilers/index.html) documentation.
 
 
