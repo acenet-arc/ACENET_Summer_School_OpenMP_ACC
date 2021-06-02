@@ -94,13 +94,6 @@ This tells the compiler to generate parallel accelerator kernels (CUDA kernels i
 Let’s run the program. Our test PC has an Intel Xeon X5550 CPU and an NVIDIA Tesla M2090 GPU. When I run it, I see that it takes about 75 seconds. Uh oh, that’s a bit of a slow-down compared to my parallel CPU code. What’s going on? We can modify the compilation command to enable built-in profiling by specifying -ta=nvidia,time. Now when I run it I get:
 
 
-#Install numpy 1.17.5:
-wget https://github.com/numpy/numpy/releases/download/v1.17.5/numpy-1.17.5.tar.gz
-tar -xf numpy-1.17.5.tar.gz
-cd numpy-1.17.5
-python setup.py install
-
-
 ## Vectorization: pointer aliasing
 
 Compiler did not identify loops as parallelizable.
