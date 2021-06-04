@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 {
 	struct timespec ts_start, ts_end;
 	float time_total;
-	int n = 70;	/* number of atoms per side */
+	int n = 60;	/* number of atoms per side */
 	int n_charges = n * n * n; /* total number of charges */
 	float a = 0.5; /* lattice constant a (a=b=c) */
 	float *q; /* array of charges */
@@ -39,6 +39,7 @@ int main(int argc, char **argv)
 
 	/* Calculate sum of all pairwise interactions: q[i]*q[j]/dist[i,j] */
 	clock_gettime(CLOCK_MONOTONIC, &ts_start);
+#pragma omp parallel for private(j, dx, dy, dz, dist) reduction(+:Energy) schedule(dynamic)
 	for (i = 0; i < n_charges; i++)
 	{
 		for (j = i + 1; j < n_charges; j++)

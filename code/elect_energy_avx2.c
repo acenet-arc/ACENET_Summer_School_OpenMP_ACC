@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 	float time_total;
 
 	int i, j, m, ix, iy, iz;
-	int n = 70;				   /* number of atoms per side */
+	int n = 60;				   /* number of atoms per side */
 	int n_charges = n * n * n; /* total number of charges */
 	float a = 0.5;			   /* Lattice constant */
 
@@ -71,6 +71,13 @@ int main(int argc, char **argv)
 	/* Treat the remainder. The last vector is padded with zeros */
 	if (v_element_count != 0)
 	{
+		for (float v = n * a * 2; v_element_count < 16; v_element_count++, v += 1)
+		{
+			tmp_vec[0][v_element_count] = v;
+			tmp_vec[1][v_element_count] = 0.0;
+			tmp_vec[2][v_element_count] = 0.0;
+			tmp_vec[3][v_element_count] = 0.0;
+		}
 		X[v_count] = _mm256_set_ps(
 			tmp_vec[0][7], tmp_vec[0][6], tmp_vec[0][5], tmp_vec[0][4],
 			tmp_vec[0][3], tmp_vec[0][2], tmp_vec[0][1], tmp_vec[0][0]);
@@ -187,6 +194,6 @@ int main(int argc, char **argv)
 
 	clock_gettime(CLOCK_MONOTONIC, &ts_end);
 	time_total = (ts_end.tv_sec - ts_start.tv_sec) * 1e9 + (ts_end.tv_nsec - ts_start.tv_nsec);
-	printf("\nTotal time is %f ms, Energy is %.3f\n", time_total / 1e6, Energy*1e-4);
+	printf("\nTotal time is %f ms, Energy is %.3f\n", time_total / 1e6, Energy * 1e-4);
 	printf("%i\n", v_count);
 }

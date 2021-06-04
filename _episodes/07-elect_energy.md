@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 {
 	struct timespec ts_start, ts_end;
 	float time_total;
-	int n = 70;	/* number of atoms per side */
+	int n = 60;	/* number of atoms per side */
 	int n_charges = n * n * n; /* total number of charges */
 	float a = 0.5; /* lattice constant a (a=b=c) */
 	float *q; /* array of charges */
@@ -85,13 +85,22 @@ int main(int argc, char **argv)
 ~~~
 {:.language-c}
 
+Our goal is to speed up calculation leveraging both levels of parallelism available in modern CPUs: OpenMP to execute the code concurrently on several CPU cores and SIMD instructions enabling each CPU core to operate on multiple data elements simultaneously (vectorization). 
+
+Writing vectorized code can take additional time but is mostly worth the effort, because the performance increase may be substantial. Modern C and Fortran compilers are capable to automatically generate SIMD instructions. However, not all code can be auto-vectorized as there are many potential obstacles for auto-vectorization. The discussing detailed guidelines to writing vectorization-friendly code are outside the scope of this workshop. In this session we will briefly look at the performance benefits of vectorization learn how to use auto-vectorization compiler feature, and how to get information about details of auto-vectorization results. 
+
 ## Performance considerations 
+### Serial performance
+First we need to compile the serial version to use as a reference for calculation of parallel scaling.  How do we know if compiler vectorized any loops?
 
-First we need the serial version to use as a reference for calculation of parallel scaling. We will use a couple of new compiler options: 
+We will use a couple of new compiler options: 
 - turn on optimization reporting *(-qopt-report=1)* 
-- ask specifically for vectorization report *(-qopt-report-phase=vec)*.   
+- turn on vectorization report *(-qopt-report-phase=vec)*. 
 
-At optimization level *-O3* compiler automatically tries to vectorize code. To compile a pure serial version with the same optimization level we can turn off auto vectorization (add *-no-vec*).
+At optimization levels *-O2* or higher Intel compiler automatically tries to vectorize code. To compile an unvectorized version with the same optimization level we need to turn off auto vectorization.
+
+- disable auto-vectorizer *(-no-vec)*
+
 ~~~
 module load StdEnv/2020 intel/2021.2.0
 icc -qopt-report=1 -qopt-report-phase=vec -O3 -no-vec elect_energy.c 
@@ -99,7 +108,9 @@ srun -c1 ./a.out
 ~~~
 {:.language-bash}
 
-Intel compiler does not print optimization information on screen, it is saved in *\*.optrpt* files. Optimization report saved in the file *elect_energy.optrpt* indicates that our main nested *for* loops computing potential energy at lines 42 and 44 are not vectorized:
+Intel compiler does not print optimization information on screen, it creates optimization report *\*.optrpt* files. 
+
+Optimization report saved in the file *elect_energy.optrpt* indicates that our main nested *for* loops computing potential energy at lines 42 and 44 are not vectorized:
 ~~~
 LOOP BEGIN at elect_energy.c(42,2)
    remark #25460: No loop optimizations reported
@@ -117,9 +128,15 @@ srun -c1 ./a.out
 ~~~
 {:.language-bash}
 
-The runtime of the serial version is about 185/260 sec on the real/training clusters respectively.
+The runtime of the serial version is about 80 sec on a real cluster with Skylake CPUs. It will run somewhat slower on the training cluster.
 
-Next, recompile the code without *-no-vec* option. The optimization report indicates that the inner *for* loop at line 44 is now vectorized:
+### Parallel performance
+#### Using Automatic Vectorization
+Next we will use use the auto-vectorizer in the compiler. This means do nothing except ensuring that the coding will not prevent vectorization. Many things, can prevent automatic vectorization or produce suboptimal vectorized code. 
+
+- Recompile the code without *-no-vec* option. 
+
+The optimization report indicates that the inner *for* loop at line 44 is now vectorized:
 ~~~
    LOOP BEGIN at elect_energy.c(44,3)
       remark #15300: LOOP WAS VECTORIZED
@@ -127,42 +144,140 @@ Next, recompile the code without *-no-vec* option. The optimization report indic
 ~~~
 {:.output}
 
-The auto vectorized program runs in about 60/80 sec on the real/training clusters respectively. This is some improvement, but not very impressive. The speedup relative to the serial version is only about 3x. The CPU is able to process 16 floating pointing numbers at once and the theoretical speedup should be 16x, right? Can we do better? 
+The auto vectorized program runs in about 26 sec on the real cluster. This is some improvement, but not very impressive. The speedup relative to the serial version is only about 3x. Skylake CPUs are able to process 16 floating pointing numbers simultaneously, so theoretical speedup should be 16x, right? Can we do better? 
 
-Use *-march=skylake-avx512* to enforce using avx512 instructions. Now it runs in 50 sec on MC, that is better (5x speedup), but still does not live up to our expectations. Can we do better? 
+- By default, the compiler uses avx2 instructions.
+- Enforce using avx512 instructions: *-march=skylake*. 
 
-Yes, if we parallelize explicitly using Intel Intrinsic AVX-512 Instructions. This is not simple, and a learning curve is steep, but it is worth it because you will have full control of the CPU. 
+On the training cluster this version will run only on "c" or "g" flavour nodes because only these flavours have Skylake CPUs supporting AVX-512. 
 
-The example of the same program written with AVX-512 Intrinsics is in the file *elect_energy_avx512.c*. The code is well annotated with explanations of everything that is done. The code 250 lines vs 60 lines  
-
-*Note: On the training cluster this program will run only on "c" or "g" flavour nodes because only these flavours have avx512-capable CPUs. These nodes can be requested using 'salloc --nodelist = large-node1'*
+- AVX-512 nodes can be requested using the *--nodelist* option, e.g.
 ~~~
-icc -qopt-report=1 -qopt-report-phase=vec -O3 elect_energy_avx512.c
-./a.out
+srun --nodelist=large-node1 ./a.out
 ~~~
 {:.language-bash}
-~~~
-Total time is 777.719360 ms, Energy is -9.698
-21438
-~~~
-{:.output}
 
-The runtime is 8.5 sec, this is 18.5x speedup!
+Now the program runs in 15.7 sec (on the real cluster), this is better (5x speedup), but still does not live up to our expectations. Can we do better? 
+
+- Yes, if we parallelize explicitly using Intrinsic AVX Functions. 
+
+#### Using Intel's Advanced Vector Extensions (AVX) Intrinsic Functions.
+This is not too complicated, and worth doing because you will be able to decide how you data is organized, moved in and out of vector processing units and what AVX instructions are used for calculations. 
+
+The examples of the same program written with AVX2 and AVX-512 Intrinsics are in the files *elect_energy_avx2.c* and *elect_energy_avx512.c*, respectively. The code is well annotated with explanations of all statements. 
+
+To summarize the vectorized algorithm:
+
+
+
+Compile the code and run it.
+~~~
+icc -qopt-report=1 -qopt-report-phase=vec -O3 elect_energy_avx2.c
+srun ./a.out
+~~~
+{:.language-bash}
+
+On the real cluster the code with explicit AVX2 instructions is twice faster than the auto-vectorized AVX-512 version,so this is 10x faster than the serial code. 
+
+But we can do even better. Try the AVX-512 version.  AVX-512 registers are twice wider than AVX2; they can operate on 16 floating point numbers.
+
+Compile the code and run it.
+~~~
+icc -qopt-report=1 -qopt-report-phase=vec -O3 elect_energy_avx512.c
+srun ./a.out
+~~~
+{:.language-bash}
+
+The benchmark on all versions on the real cluster is below. As you can see,  AVX-512 version is 1.7x faster than AVX2. Adapting AVX2 to AVX-512 is very straightforward. 
+
+#### Benchmark n=60, single thread, cluster Siku
+
+ Version          | Time |  Speedup
+------------------|------|
+Serial            | 81.2 | 1.0
+auto-vec          | 26.1 | 3.1     
+auto-vec, skylake | 15.7 | 5.2
+avx2              | 7.7  | 10.5
+avx512            | 4.58 | 17.7 
+
 
 Compilers are very conservative in automatic vectorization and in general they will use the safest solution. If compiler suspects data dependency, it will not parallelize code. The last thing compiler developers want is for a program to give the wrong results! But you can analyze the code, if needed modify it to eliminate data dependencies and try different parallelization strategies to optimize the performance.
 
+#### What Loops can be vectorized?
 
-Parallel auto-parallelized 8.7 sec  speedup 21x
-Parallel explicit avx512   1.1 sec  speedup 168x
+- The number of iterations must be known (at runtime, not at compilation time) and remain constant for the duration of the loop. 
+- The loop must have single entry and single exit. For example no data-dependent exit.
+- The loop must have straight-line code. Because SIMD instructions perform the same operation on data elements it is not possible to switch instructions for different iterations. The exception is *if* statements that can be implemented as masks. For example the calculation is performed for all data elements, but the result is stored only for those elements for which the mask evaluates to true. 
+- No function calls are allowed. Only intrinsic vectorized math functions or functions that can be inlined are allowed.
+ 
+### Adding parallelization with OpenMP
 
+The vectorized program can run in parallel on each of the cores of modern multicore CPUs, so the maximum theoretical speedup should be proportional to the numbers of threads. 
+
+> ## Parallelize the code
+> 1. Decide what variable or variables should be made private, and then compile and test the code.
+> 2. Run on few different numbers of CPUs. How does the performance scale?
+> 3. Try changing *schedule* from *dynamic* to *static*. How does it affect the performance? Can you suggest the reason? 
+>
+> > ## Solution
+> > Add the following OpenMP *pragma* just before the main loop
+> > ~~~
+> > #pragma omp parallel for private(j, dx, dy, dz, dist) reduction(+:Energy) schedule(dynamic)
+> > ~~~
+> > {:.language-c}
+> {: .solution}
+{: .challenge}
 
 - To parallelize with OpenMP add the line just before the main loop
 ~~~
-#pragma omp parallel for private(j, dx, dy, dz, dist) reduction(+:Energy) schedule(dynamic)
+#pragma omp parallel for private(j, dx, dy, dz, dist) reduction(+:Energy)
 ~~~
 {:.language-c}
 
-The parallel auto-vectorized version runs in 
+The benchmark on all versions on the real cluster is below. The speedup of the OpenMP version matches our expectations.
+
+#### Benchmark n=60, OpenMP 10 threads, cluster Siku.
+
+Version            | Time   |  Speedup
+-------------------|--------|
+not vectorized     | 7.8    | 10.4
+auto-vect          | 2.5    | 32.5     
+auto-vect, skylake | 1.43   | 56.8
+avx2               | 0.764  | 106.3
+avx512             | 0.458  | 177.3
+
+
+### OpenMP scheduling
+
+OpenMP automatically partitions the iterations of a *parallel for* loop. By default it divides all iterations in a number of chunks equal to the number of threads. The number of iterations in each chunk is the same, and each thread is getting one chunk to execute. This is *static* scheduling, in which all iterations are allocated to threads before they execute any loop iterations. However, a *static* schedule can be non-optimal. This is the case when the different iterations need different amounts of time. This is true for our program computing potential. 
+
+This program can be improved with a *dynamic* schedule. In *dynamic* scheduling, OpenMP assigns one iteration to each thread. Threads that complete their iteration will be assigned the next iteration that hasn’t been executed yet. The allocation process continues until all the iterations have been distributed to threads.
+
+If *dynamic* scheduling balances load why do we need *static* scheduling at all? The problem is that here is some overhead to *dynamic* scheduling. After each iteration, the threads must stop and receive a new value of the loop variable to use for its next iteration.
+
+There's a tradeoff between overhead (i.e., how much time is spent setting up the schedule) and load balancing (i.e., how much time is spent waiting for the most heavily-worked thread to catch up). 
+- Static scheduling has low overhead but may be badly balanced
+- Dynamic scheduling has higher overhead.
+
+Both scheduling types also take a *chunk size*; larger chunks mean less overhead and greater memory locality, smaller chunks may mean finer load balancing. You can omit the chunk size, it defaults to 1 for *dynamic* schedule and to $N_{iterrations}/{N_{threads}}$ for *static* schedule.
+
+Bad load balancing might be what's causing this code not to parallelize very well. As we are computing triangular part of the interaction matrix *static* scheduling with the default *chunk size* will lead to uneven load.
+
+Let's add a `schedule(dynamic)` or `schedule(static,100)` clause and see what happens.
+
+> ## Play with the schedule() clause
+>
+> Try different `schedule()` clauses and tabulate the run times with different thread numbers. What seems to work best for this problem?
+>
+> Does it change much if you grow the problem size? That is, if you make `size` bigger?
+>
+> There's a third option, `guided`, which starts with large chunks and gradually decreases the chunk size as it works through the iterations.
+> Try it out too, if you like. With `schedule(guided,<chunk>)`, the chunk parameter is the smallest chunk size it will try.
+{: .challenge}
+
+
+
+
 
 
 ## Performance - vectorization?
@@ -230,98 +345,5 @@ printf("Average time is %f ms\n", average_time/3e6);
 - Compiler does not even look in nested loops ?
 - Compiler does not vectorize dynamically allocated arrays -??
 
-Now comes the parallelization.
 
-> ## Parallelize the energy code
-> 1. Decide what variable or variables should be made private, and then compile and test the code.
-> 2. Run on few different numbers of CPUs. How does the performance scale?
->
-> > ## Solution
-> > ~~~
-> > /* --- File elect_energy_omp.c --- */
-> > #include <stdio.h>
-> > #include <stdlib.h>
-> > #include <time.h>
-> > #include <math.h>
-> >
-> > int main(int argc, char **argv) {
-> > 	struct timespec ts_start, ts_end;
-> > 	int size = 30;
-> > 	int n_charges = size*size*size;
-> > 	float scale=0.5;
-> > 	float *charge, *x, *y, *z;
-> > 	float **M;
-> > 	int i,j,k;
-> > 	float time_total;
-> >
-> > 	charge=malloc(n_charges*sizeof(float));
-> > 	x=malloc(n_charges*sizeof(float));
-> > 	y=malloc(n_charges*sizeof(float));
-> > 	z=malloc(n_charges*sizeof(float));
-> > 	M=(float**)malloc(n_charges*sizeof(float*));
-> > 	for (i=0;i<n_charges;i++)
-> > 		M[i]=malloc(n_charges*sizeof(float));
-> >
-> > /* initialize x,y,z coordinates and charges */
-> > 	int n=0;
-> > 	for (i=0; i<size; i++)
-> > 		for (j=0; j<size; j++)
-> > 			for (k=0; k<size; k++) {
-> > 				x[n]=i*scale;
-> > 				y[n]=j*scale;
-> > 				z[n]=k*scale;
-> > 				charge[n]=0.33;
-> > 				n++;
-> > 			}
-> > 	clock_gettime(CLOCK_MONOTONIC, &ts_start);
-> >
-> > 	// Calculate electrostatic energy: sum of charge[i]*charge[j]/dist[i,j] */
-> > 	float dx, dy, dz, dist;
-> > 	double Energy=0.0f;
-> > #pragma omp parallel for private(j,dx,dy,dz,dist) reduction(+:Energy) schedule(static,50)
-> > 	for (i = 0; i < n_charges; i++) {
-> > 		for (j = i+1; j < n_charges; j++) {
-> > 			dx = x[i]-x[j];
-> > 			dy = y[i]-y[j];
-> > 			dz = z[i]-z[j];
-> > 			dist=sqrt(dx*dx + dy*dy + dz*dz);
-> > 			Energy += charge[i]*charge[j]/dist;
-> > 		}
-> > 	}
-> >
-> > 	clock_gettime(CLOCK_MONOTONIC, &ts_end);
-> > 	time_total = (ts_end.tv_sec - ts_start.tv_sec)*1e9 + (ts_end.tv_nsec - ts_start.tv_nsec);
-> > 	printf("\nTotal time is %f ms, Energy is %f\n", time_total/1e6, Energy);
-> > }
-> > ~~~
-> > {:.language-c}
-> {: .solution}
-{: .challenge}
 
-## The schedule() clause
-
-OpenMP loop directives (`parallel for, parallel do`) can take several other clauses besides the `private()` clause we've already seen. One is `schedule()`, which allows us to specify how loop iterations are divided up among the
-threads.
-
-The default is *static* scheduling, in which all iterations are allocated to threads before they execute any loop iterations.
-
-In *dynamic* scheduling, only some of the iterations are allocated to threads at the beginning of the loop's execution. Threads that complete their iterations are then eligible to get additional work. The allocation process continues until all the iterations have been distributed to threads.
-
-There's a tradeoff between overhead (i.e., how much time is spent setting up the schedule) and load balancing (i.e., how much time is spent waiting for the most heavily-worked thread to catch up). Static scheduling has low overhead but
-may be badly balanced; dynamic scheduling has higher overhead.
-
-Both scheduling types also take a *chunk size*; larger chunks mean less overhead and greater memory locality, smaller chunks may mean finer load balancing. You can omit the chunk size, it defaults to 1 for *dynamic* schedule and to $N_{iterrations}/{N_{threads}}$ for *static* schedule.
-
-Bad load balancing might be what's causing this code not to parallelize very well. As we are computing triangular part of the interaction matrix *static* scheduling with the default *chunk size* will lead to uneven load.
-
-Let's add a `schedule(dynamic)` or `schedule(static,100)` clause and see what happens.
-
-> ## Play with the schedule() clause
->
-> Try different `schedule()` clauses and tabulate the run times with different thread numbers. What seems to work best for this problem?
->
-> Does it change much if you grow the problem size? That is, if you make `size` bigger?
->
-> There's a third option, `guided`, which starts with large chunks and gradually decreases the chunk size as it works through the iterations.
-> Try it out too, if you like. With `schedule(guided,<chunk>)`, the chunk parameter is the smallest chunk size it will try.
-{: .challenge}

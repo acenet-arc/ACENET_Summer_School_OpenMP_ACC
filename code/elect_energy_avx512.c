@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 	float time_total;
 
 	int i, j, m, ix, iy, iz;
-	int n = 70;				   /* number of atoms per side */
+	int n = 60;				   /* number of atoms per side */
 	int n_charges = n * n * n; /* total number of charges */
 	float a = 0.5;			   /* Lattice constant */
 
