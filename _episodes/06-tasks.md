@@ -306,7 +306,7 @@ The depend clause enforces additional constraints on the scheduling of tasks or 
 >- The call to *fib(n)* generates two tasks. One of the tasks computes *fib(n-1)* and the other computes *fib(n-2)*. 
 >- The two return values are added together to produce the value returned by *fib(n)*. 
 >- Each of the calls to *fib(n-1)* and *fib(n-2)* will in turn generate two tasks. Tasks will be recursively generated until the argument passed to *fib()* is less than 2.
->
+> <img src="../fig/fib.png" width="300">
 >The *taskwait* directive ensures that both tasks generated in *fib( )* compute *i* and *j* before return.
 >
 >~~~
