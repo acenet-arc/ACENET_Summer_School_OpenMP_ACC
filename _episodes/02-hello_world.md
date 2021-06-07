@@ -141,7 +141,7 @@ from the *printf()* function, at which point they are terminated
 > ~~~
 > cd scratch
 > wget  https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/blob/gh-pages/code/omp_code.tar
-> tar -xf omp.tar
+> tar -xf omp_code.tar
 > ~~~
 > {: .language-bash}
 {: .callout}
