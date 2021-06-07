@@ -140,9 +140,8 @@ from the *printf()* function, at which point they are terminated
 > If you have not yet done so, download and unpack the code:
 > ~~~
 > cd scratch
-> wget https://github.com/ssvassiliev/Summer_School_OpenMP/raw/master/code/omp.tar.gz
-> tar -xf omp.tar.gz
-> cd code
+> wget  https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/blob/gh-pages/code/omp_code.tar
+> tar -xf omp.tar
 > ~~~
 > {: .language-bash}
 {: .callout}
