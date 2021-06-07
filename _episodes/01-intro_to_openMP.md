@@ -58,7 +58,16 @@ module load StdEnv/2020
 
 You don't need to run this command on the real CC clusters because StdEnv/2020 is the default, but we need to run it on the training cluster.
 
- As a reminder, a simple hello world program in C would look like the following.
+Get the code examples:
+~~~
+cd ~/scratch
+cp /tmp/omp_code.tar .
+tar -xf omp_code.tar
+~~~
+{:.language-bash}
+
+As a reminder, a simple hello world program in C would look like the following.
+
 
 > ## Compiling C code
 > ~~~
