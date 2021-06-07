@@ -58,11 +58,18 @@ module load StdEnv/2020
 
 You don't need to run this command on the real CC clusters because StdEnv/2020 is the default, but we need to run it on the training cluster.
 
-Get the code examples:
+Get the code examples.
+On the training cluster:
 ~~~
 cd ~/scratch
 cp /tmp/omp_code.tar .
 tar -xf omp_code.tar
+~~~
+{:.language-bash}
+
+On a real cluster:
+~~~
+wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/blob/3e12ab09ba7710db91b998bb9da6d5e161cb958c/code/omp_code.tar
 ~~~
 {:.language-bash}
 
