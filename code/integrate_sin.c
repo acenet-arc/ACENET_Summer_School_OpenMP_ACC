@@ -4,9 +4,9 @@
 #include <math.h>
 
 int main(int argc, char **argv) {
-	int steps = 1e7;
-	double delta = M_PI/steps;
-	double total = 0.0;
+	int steps = 1e7;  /* Number of rectangles */ 
+	double delta = M_PI/steps;/* Width of each rectangle */
+	double total = 0.0;  /* Accumulator */
 	int i;
 
 	printf("Using %.0e steps\n", (float)steps);
