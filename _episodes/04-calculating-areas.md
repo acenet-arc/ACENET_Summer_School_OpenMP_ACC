@@ -27,18 +27,15 @@ As our example, let's integrate the sine function from 0 to $\pi$. This is the s
 #include <math.h>
 
 int main(int argc, char **argv) {
-	int nRect = 1e7;             /* Number of rectangles */ 
-	double delta = M_PI/nRect;   /* Width of each rectangle */
-	double total = 0.0;          /* Accumulator */
+	int steps = 1e7;
+	double delta = M_PI/steps;
+	double total = 0.0;
 	int i;
 
-	printf("Approximating integral with %.0e rectangles\n", (float)nRect);
-
-	for (i=0; i<steps; i++) 
-	{
-		total += sin(delta*i) * delta;
+	printf("Using %.0e steps\n", (float)steps);
+	for (i=0; i<steps; i++) {
+		total = total + sin(delta*i) * delta;
 	}
-
 	printf("The integral of sine from 0 to Pi is %.12f\n", total);
 }
 ~~~
@@ -225,4 +222,3 @@ int main(int argc, char **argv) {
 {:.language-c}
 
 This problem is analogous to the summation. You would want to make sure that each thread has a private copy of the *curr_max* variable, since it will be written to. When all threads have found the maximum value in their share of data you would want to find out which thread has the largest value. 
- 
