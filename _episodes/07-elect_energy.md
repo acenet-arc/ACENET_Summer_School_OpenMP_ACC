@@ -91,15 +91,19 @@ Writing vectorized code can take additional time but is mostly worth the effort,
 
 ## Performance considerations 
 ### Serial performance
-First we need to compile the serial version to use as a reference for calculation of parallel scaling.  How do we know if compiler vectorized any loops?
+First we need to compile the serial version to use as a reference for calculation of parallel scaling. For this section we will use Intel compiler. 
 
-We will use a couple of new compiler options: 
-- turn on optimization reporting *(-qopt-report=1)* 
-- turn on vectorization report *(-qopt-report-phase=vec)*. 
+#### Using the auto-vectorizer in Intel compiler
 
 At optimization levels *-O2* or higher Intel compiler automatically tries to vectorize code. To compile an unvectorized version with the same optimization level we need to turn off auto vectorization.
 
 - disable auto-vectorizer *(-no-vec)*
+
+How do we know if compiler was able to vectorize any loops?
+
+For this we will use a couple of new compiler options: 
+- turn on optimization reporting *(-qopt-report=1)* 
+- turn on vectorization report *(-qopt-report-phase=vec)*. 
 
 ~~~
 module load StdEnv/2020 intel/2021.2.0
@@ -129,6 +133,14 @@ srun -c1 ./a.out
 {:.language-bash}
 
 The runtime of the serial version is about 80 sec on a real cluster with Skylake CPUs. It will run somewhat slower on the training cluster.
+
+>## Using the auto-vectorizer in GCC
+>- auto-vectorizer is enabled by default at optimization level *-O3*
+>- auto-vectorizer can be enabled with the option *-ftree-vectorize* and disabled with *-fno-tree-vectorize*
+>- print info about unsuccessful optimization *-fopt-info-vec-missed*
+>- print info about optimized loops *-fopt-info-vec-optimized*
+{:.callout}
+
 
 ### Parallel performance
 #### Using Automatic Vectorization
@@ -162,13 +174,11 @@ Now the program runs in 15.7 sec (on the real cluster), this is better (5x speed
 - Yes, if we parallelize explicitly using Intrinsic AVX Functions. 
 
 #### Using Intel's Advanced Vector Extensions (AVX) Intrinsic Functions.
-This is not too complicated, and worth doing because you will be able to decide how you data is organized, moved in and out of vector processing units and what AVX instructions are used for calculations. 
+This is not too complicated, and worth doing because you will be able to decide how you data is organized, moved in and out of vector processing units and what AVX instructions are used for calculations. With Intrinsic Functions, you are fully responsible for design and optimization of the algorithm, compiler will follow your commands.
 
 The examples of the same program written with AVX2 and AVX-512 Intrinsics are in the files *elect_energy_avx2.c* and *elect_energy_avx512.c*, respectively. The code is well annotated with explanations of all statements. 
 
 To summarize the vectorized algorithm:
-
-
 
 Compile the code and run it.
 ~~~
@@ -200,7 +210,6 @@ auto-vec, skylake | 15.7 | 5.2
 avx2              | 7.7  | 10.5
 avx512            | 4.58 | 17.7 
 
-
 Compilers are very conservative in automatic vectorization and in general they will use the safest solution. If compiler suspects data dependency, it will not parallelize code. The last thing compiler developers want is for a program to give the wrong results! But you can analyze the code, if needed modify it to eliminate data dependencies and try different parallelization strategies to optimize the performance.
 
 #### What Loops can be vectorized?
@@ -210,14 +219,13 @@ Compilers are very conservative in automatic vectorization and in general they w
 - The loop must have straight-line code. Because SIMD instructions perform the same operation on data elements it is not possible to switch instructions for different iterations. The exception is *if* statements that can be implemented as masks. For example the calculation is performed for all data elements, but the result is stored only for those elements for which the mask evaluates to true. 
 - No function calls are allowed. Only intrinsic vectorized math functions or functions that can be inlined are allowed.
  
-### Adding parallelization with OpenMP
+### Adding OpenMP parallelization 
 
 The vectorized program can run in parallel on each of the cores of modern multicore CPUs, so the maximum theoretical speedup should be proportional to the numbers of threads. 
 
 > ## Parallelize the code
 > 1. Decide what variable or variables should be made private, and then compile and test the code.
 > 2. Run on few different numbers of CPUs. How does the performance scale?
-> 3. Try changing *schedule* from *dynamic* to *static*. How does it affect the performance? Can you suggest the reason? 
 >
 > > ## Solution
 > > Add the following OpenMP *pragma* just before the main loop
@@ -227,12 +235,6 @@ The vectorized program can run in parallel on each of the cores of modern multic
 > > {:.language-c}
 > {: .solution}
 {: .challenge}
-
-- To parallelize with OpenMP add the line just before the main loop
-~~~
-#pragma omp parallel for private(j, dx, dy, dz, dist) reduction(+:Energy)
-~~~
-{:.language-c}
 
 The benchmark on all versions on the real cluster is below. The speedup of the OpenMP version matches our expectations.
 
@@ -246,55 +248,33 @@ auto-vect, skylake | 1.43   | 56.8
 avx2               | 0.764  | 106.3
 avx512             | 0.458  | 177.3
 
-
 ### OpenMP scheduling
-
-OpenMP automatically partitions the iterations of a *parallel for* loop. By default it divides all iterations in a number of chunks equal to the number of threads. The number of iterations in each chunk is the same, and each thread is getting one chunk to execute. This is *static* scheduling, in which all iterations are allocated to threads before they execute any loop iterations. However, a *static* schedule can be non-optimal. This is the case when the different iterations need different amounts of time. This is true for our program computing potential. 
+OpenMP automatically partitions the iterations of a *parallel for* loop. By default it divides all iterations in a number of chunks equal to the number of threads. The number of iterations in each chunk is the same, and each thread is getting one chunk to execute. This is *static* scheduling, in which all iterations are allocated to threads before they execute any loop iterations. However, a *static* schedule can be non-optimal. This is the case when the different iterations need different amounts of time. This is true for our program computing potential. As we are computing triangular part of the interaction matrix *static* scheduling with the default *chunk size* will lead to uneven load.
 
 This program can be improved with a *dynamic* schedule. In *dynamic* scheduling, OpenMP assigns one iteration to each thread. Threads that complete their iteration will be assigned the next iteration that hasn’t been executed yet. The allocation process continues until all the iterations have been distributed to threads.
 
-If *dynamic* scheduling balances load why do we need *static* scheduling at all? The problem is that here is some overhead to *dynamic* scheduling. After each iteration, the threads must stop and receive a new value of the loop variable to use for its next iteration.
+- If *dynamic* scheduling balances load why would we want to use *static* scheduling at all? 
 
-There's a tradeoff between overhead (i.e., how much time is spent setting up the schedule) and load balancing (i.e., how much time is spent waiting for the most heavily-worked thread to catch up). 
+The problem is that here is some overhead to *dynamic* scheduling. After each iteration, the threads must stop and receive a new value of the loop variable to use for its next iteration. Thus, there's a tradeoff between overhead and load balancing.
+
 - Static scheduling has low overhead but may be badly balanced
 - Dynamic scheduling has higher overhead.
 
-Both scheduling types also take a *chunk size*; larger chunks mean less overhead and greater memory locality, smaller chunks may mean finer load balancing. You can omit the chunk size, it defaults to 1 for *dynamic* schedule and to $N_{iterrations}/{N_{threads}}$ for *static* schedule.
-
-Bad load balancing might be what's causing this code not to parallelize very well. As we are computing triangular part of the interaction matrix *static* scheduling with the default *chunk size* will lead to uneven load.
+Both scheduling types also take a *chunk size* argument; larger chunks mean less overhead and greater memory locality, smaller chunks may mean finer load balancing. Chunk size defaults to 1 for *dynamic* schedule and to $\frac{N_{iterrations}}{N_{threads}}$ for *static* schedule.
 
 Let's add a `schedule(dynamic)` or `schedule(static,100)` clause and see what happens.
 
-> ## Play with the schedule() clause
+> ## Experiment with scheduling
+> 1. Try different scheduling types. How does it affect the performance? What seems to work best for this problem? Can you suggest the reason? 
+> 2. Does the optimal scheduling change much if you grow the problem size? That is, if you make *n* bigger?
+> 3. There's a third scheduling type, *guided*, which starts with large chunks and gradually decreases the chunk size as it works through the iterations. Try it out too, if you like. With  the *guided* scheduling, the chunk parameter is the smallest chunk size OpenMP will try.
 >
-> Try different `schedule()` clauses and tabulate the run times with different thread numbers. What seems to work best for this problem?
+>> ## Solution
+>> We are computing triangular part of the interaction matrix. The range of pairwise interactions computed by a thread will vary from *1* to *(n_charges - 1)*. Therefore, *static* scheduling with the default *chunk size* will lead to uneven load.
+>{:.solution}
 >
-> Does it change much if you grow the problem size? That is, if you make `size` bigger?
->
-> There's a third option, `guided`, which starts with large chunks and gradually decreases the chunk size as it works through the iterations.
-> Try it out too, if you like. With `schedule(guided,<chunk>)`, the chunk parameter is the smallest chunk size it will try.
 {: .challenge}
 
-
-
-
-
-
-## Performance - vectorization?
-- GCC automatically vectorizes code at optimization level *-O3*, or with the option *-ftree-vectorize*.
-- Intel automatically vectorizes code at optimization level *-O3*. To turn off vectorization use the option *-no-vec*.
-
-### How can we find out if loops were vectorized?
-- GNU compiler will print info about unsuccessful optimization:
-~~~
-gcc -O3 -fopt-info-vec-missed  
-~~~
-{:.language-bash}
-- Intel compiler will save optimization info into a file "*.optrpt" with the following options: 
-~~~
-icc -qopt-report=1 -qopt-report-phase=vec -O3 
-~~~
-{:.language-bash}
 
 The code that can be vectorized:
 ~~~
@@ -341,9 +321,6 @@ printf("Average time is %f ms\n", average_time/3e6);
 ~~~
 {:.language-c}
 
-
-- Compiler does not even look in nested loops ?
-- Compiler does not vectorize dynamically allocated arrays -??
 
 
 

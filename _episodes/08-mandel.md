@@ -161,26 +161,4 @@ Now comes the parallelization.
 > 2. Run on few different numbers of CPUs. How does the performance scale?
 {: .challenge}
 
-## The schedule() clause
-
-OpenMP loop directives (`parallel for, parallel do`) can take several other
-clauses besides the `private()` clause we've already seen. One is `schedule()`, which allows us to specify how loop iterations are divided up among the
-threads.
-
-The default is *static* scheduling, in which all iterations are allocated to threads before they execute any loop iterations. In *dynamic scheduling*, only some of the iterations are allocated to threads at the beginning of the loop's execution. Threads that complete their iterations are then eligible to get additional work. The allocation process continues until all the iterations have been distributed to threads.
-
-There's a tradeoff between overhead (i.e., how much time is spent setting up the schedule) and load balancing (i.e., how much time is spent waiting for the most heavily-worked thread to catch up). Static scheduling has low overhead but
-may be badly balanced; dynamic scheduling has higher overhead. Both can also take a *chunk size*; larger chunks mean less overhead and greater memory locality, smaller chunks may mean finer load balancing. You can omit the chunk
-size, it defaults to 1.
-
-Bad load balancing might be what's causing this Mandelbrot code not to parallelize very well. Let's add a `schedule(dynamic)` clause and see what happens.
-
-> ## Play with the schedule() clause
->
-> Try different `schedule()` clauses and tabulate the run times with different thread numbers. What seems to work best for this problem?
->
-> Does it change much if you grow the problem size? That is, if you make `m,n` bigger?
->
-> There's a third option, `guided`, which starts with large chunks and gradually decreases the chunk size as it works through the iterations.
-> Try it out too, if you like. With `schedule(guided,<chunk>)`, the chunk parameter is the smallest chunk size it will try.
-{: .challenge}
+ 

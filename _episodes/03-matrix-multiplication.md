@@ -312,7 +312,7 @@ Since either of the two statements can read or write a variable, there are four 
 > {: .solution}
 {: .challenge}
 
-Not everything can be parallelized. If there is data dependency you may need to modify your algorithm to be more parallel-friendly. Spend some time (drawing diagrams may help) to see what happens when two (or more) threads work simultaneously on a loop. It's not pretty. One of the strategies for solving some data dependency problems may be to write into a new copy of an array make and at the end of each iteration update old from new. 
+Not everything can be parallelized. If there is data dependency you may need to modify your algorithm to be more parallel-friendly. Spend some time (drawing diagrams may help) to see what happens when two (or more) threads work simultaneously on a loop. It's not pretty. One of the strategies for solving some data dependency problems may be to write into a new copy of an array and at the end of each iteration update old from new. 
 
 ## Thread-safe functions
 Another important concept is that of a *thread-safe* function.  
@@ -360,15 +360,27 @@ float funct(float *p1, float *p2)
 
 The variables dx and dy may be modified by another thread after they are computed and before they are used. This function is not thread-safe.
 
-You need to be aware when writing multi-threaded programs whether functions you are using are thread safe or not. For example random number generator rand() is not thread safe. For threaded applications thread safe version of random number generator rand_r() is available. 
+You need to be aware when writing multi-threaded programs whether functions you are using are thread safe or not. For example random number generator rand( ) is not thread safe. For threaded applications thread safe version of random number generator rand_r( ) is available. 
 
 For more, see [Thread safety](https://en.wikipedia.org/wiki/Thread_safety).
 
 ### Optimizing performance
 #### CPU cache and data locality
-Let's do a quick experiment. Run our array_multiply_omp.c code on 4 CPUs and record timing. On our training cluster you will get something like:
+Let's do a quick experiment. Compile our matrix_multiply_omp.c code with Intel compiler:
 ~~~
-Total is 100000000, time is 521.661536 ms
+module load StdEnv/2020 intel/2021.2.0
+icc matrix_multiply_omp.c -gopenmp
+~~~
+{:.language-bash}
+
+Run on 4 CPUs and record timing. On our training cluster you will get something like:
+
+~~~
+srun --mem-per-cpu=2000 -c4 ./a.out
+~~~
+{:.language-bash}
+~~~
+Total is 100000000, time is 17.243648 ms
 ~~~
 {:.output}
 
@@ -386,10 +398,11 @@ Then swap *i* and *j* indexes in line 38 of the main loop:
 Recompile the program and run it again.
 
 ~~~
-Total is 100000000, time is 17.243648 ms
+Total is 100000000, time is 521.661536 ms
 ~~~
 {:.output}
-  
+
+
 What is going on?   
 Modern compilers should be smart enough to figure out how to maximize the performance, right? 
 
@@ -404,17 +417,19 @@ Taking advantage from cache is possible only if an array we are looping through 
 C/C++ compiler stores static matrices in row-major order. Although we did not use static array, we stored our matrix in the same way. So if our inner loop iterates through elements of a row as shown in the diagram below, then a chunk of a row  will be loaded into cache upon the first access. 
 
 ~~~
-   1    2 ... 1000          j=1               j=2   
-1001 1002 ... 2000  -->  1 2 ... 1000   1001 1002 ... 2000 
-2001 2002 ... 3000
+                             j=1               j=2   
+   1    2 ... 1000 ... -->  1 2 ... 1000 
+1001 1002 ... 2000 ... -->                 1001 1002 ... 2000 
+2001 2002 ... 3000 ...
 ...
 ~~~
 
 This will not happen if in out inner loop we iterate through elements of a column (loop variable *i*) because columns are not contiguous memory blocks:
 ~~~
-   1    2 ... 1000          i=1                          j=2   
-1001 1002 ... 2000  -->  1 1001 2001 ... 1000000   1002 1202 ... 1000000  
-2001 2002 ... 3000
+                              i=1                 i=2   
+   1    2 ... 1000 ... -->  1 1001 2001 ...   2 1002 2002 ...   
+1001 1002 ... 2000 ...
+2001 2002 ... 3000 ...
 ...
 ~~~
 In this case, CPU will need to access main memory to load each matrix element.

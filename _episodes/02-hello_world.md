@@ -222,10 +222,10 @@ A work-sharing construct divides the execution of the enclosed code region among
 - Work-sharing constructs do not launch new threads
 - A program will wait for all threads to finish at the end of a work sharing construct. This behaviour is called "implied barrier".
 
-#### *For*
-- ***For*** construct divides iterations of a loop across the team of threads.
+#### The *omp for*
+- The *omp for* construct divides iterations of a loop across the team of threads.
 - Each thread executes the same instructions. This assumes a parallel region has already been initiated, otherwise it executes in serial on a single processor.
-- *For* represents a type of *data parallelism*.
+- *omp for* represents a type of *data parallelism*.
 
 ~~~
 ...
@@ -236,25 +236,31 @@ A work-sharing construct divides the execution of the enclosed code region among
 ~~~
 {: .language-c}
 
-> ## Stack Overflow
+> ## Using arrays in C
 > The easiest way to declare arrays as static: 
 > ~~~
 >  A[2048][2048];
 > ~~~
 >{: .language-c}
->Globally defined static arrays are allocated when a program starts, and they occupy memory until a program ends. If you declare large arrays as static, your program may crash with a "Segmentation fault" error. Static arrays are allocated on the stack, and the OS limits the size of the stack memory available to a user. You can check your stack memory limit using the command:
+>Globally defined static arrays are allocated when a program starts, and they occupy memory until a program ends. If you declare large arrays as static, your program may crash with a "Segmentation fault" error. Static arrays are allocated on the stack, and the OS limits the size of the stack memory available to a user. 
+>- You can check your stack memory limit using the command:
 >~~~
 >ulimit -s
 >~~~
->{:.language-c}
+>{:.language-bash}
+>- The *ulimit* command allows you to modify your stack memory limit:
+>~~~
+>ulimit -s unlimited
+>~~~
+>{:.language-bash}
 {: .callout}
 
-#### *Sections*
-- ***Sections*** construct breaks work into separate, discrete sections.
+#### The *omp sections*
+- The *omp sections* construct breaks work into separate, discrete sections.
 - It is is a non-iterative work-sharing construct.
 - It specifies that the enclosed section(s) of code are to be divided among the threads in the team. Independent *section* directives are nested within a *sections* directive. Each *section* contains different instructions and is executed once by a thread.
 - It is possible for a thread to execute more than one *section*.
-- *Sections* can be used to implement a *functional parallelism*.
+- *Sections* can be used to implement a *functional parallelism* (concurrent execution of different tasks).
 
 ~~~
 #pragma omp parallel shared(a,b,c,d) private(i)
@@ -278,7 +284,14 @@ A work-sharing construct divides the execution of the enclosed code region among
 Here *nowait* keyword (clause) means that the program will not wait at the end of `sections` block for all threads to finish.
 
 > ## Exercise
-> Compile the file *sections.c* and run it on a different number of CPUs. This example has two sections and the program prints out which threads are doing them.
+> Compile the file *sections.c* and run it on a different number of CPUs. 
+> Start with 1 CPU:
+>~~~
+> srun -c1 ./a.out
+>~~~
+>{:.language-bash}
+>
+This example has two sections and the program prints out which threads are doing them.
 > - What happens if the number of threads and the number of *sections* are different?
 > - More threads than *sections*?
 > - Less threads than sections?

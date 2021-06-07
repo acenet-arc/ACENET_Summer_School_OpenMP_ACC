@@ -62,6 +62,7 @@ You don't need to run this command on the real CC clusters because StdEnv/2020 i
 
 > ## Compiling C code
 > ~~~
+> /* --- File hello_world.c --- */
 > #include <stdio.h>
 > #include <stdlib.h>
 >
