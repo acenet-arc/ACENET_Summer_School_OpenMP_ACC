@@ -1,7 +1,7 @@
 ---
 title: "General Parallel Sections"
-teaching: 20
-exercises: 15
+teaching: 10
+exercises: 0
 questions:
 - "How to make each thread to do a different work?"
 objectives:
@@ -41,7 +41,6 @@ int main(int argc, char **argv) {
 Using this as a starting point, we could use this code to have each available thread do something interesting. For example, we could write the text out to a series of individual files.
 
 ## Single threaded function
-
 There are times when you may need to drop out of a parallel section in order to have a single one of the threads executing some code.
 
 - The *omp single* directive allows us to do this.

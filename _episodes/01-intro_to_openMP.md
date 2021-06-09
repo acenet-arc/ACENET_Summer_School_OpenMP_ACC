@@ -69,7 +69,7 @@ tar -xf omp_code.tar
 
 On a real cluster:
 ~~~
-wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/blob/3e12ab09ba7710db91b998bb9da6d5e161cb958c/code/omp_code.tar
+wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/raw/gh-pages/code/omp_code.tar 
 ~~~
 {:.language-bash}
 

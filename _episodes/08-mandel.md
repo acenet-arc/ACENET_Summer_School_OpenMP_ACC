@@ -1,7 +1,7 @@
 ---
 title: "Drawing the Mandelbrot set"
-teaching: 20
-exercises: 10
+teaching: 5
+exercises: 0
 questions:
 - "How do we handle irregular tasks?"
 objectives:
@@ -12,8 +12,7 @@ keypoints:
 
 The <a href="https://en.wikipedia.org/wiki/Mandelbrot_set">Mandelbrot set</a>
 was a hot subject of computer art in the 1980s.  The algorithm is quite simple:
-- For each point on the screen, do an iterative calculation and decide whether the calculation diverges or not. Color that spot on the screen according to how many iterations it took to diverge or black if it didn't diverge in 1000
-iterations.
+- For each point on the screen, do an iterative calculation and decide whether the calculation diverges or not. Color that spot on the screen according to how many iterations it took to diverge or black if it didn't diverge in 1000 iterations.
 
 ~~~
 # include <stdlib.h>

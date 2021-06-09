@@ -1,14 +1,14 @@
 ---
 title: "Introduction to GPU Programming with OpenACC"
-teaching: 20
-exercises: 10
+teaching: 35
+exercises: 5
 questions:
 - "How to program GPU?"
 objectives:
 - "Learn about tools available for programming GPU"
 - "Learn about programming GPU with openACC"
 keypoints:
-- "Different loop scheduling may compensate for unbalanced loop iterations"
+- "OpenACC offers a quick path to accelerated computing with less programming effort"
 ---
 
 ## Introduction

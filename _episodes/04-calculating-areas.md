@@ -1,6 +1,6 @@
 ---
 title: "Race Conditions with OpenMP"
-teaching: 20
+teaching: 25
 exercises: 5
 questions:
 - "How can we calculate integrals in parallel?"

@@ -1,6 +1,6 @@
 ---
 title: "OpenMP Tasks"
-teaching: 20
+teaching: 25
 exercises: 5
 questions:
 - "How to recurse in parallel"
