@@ -203,8 +203,8 @@ The *task depend* clause allows you to provide information on the order in which
 
 - The *depend* clause is followed by an access mode that can be *in*, *out* or *inout*.
 - *depend(in:x)* - task will read variable *x*
-- *depend(out:y) - task will write variable *y*, previous value of *y* will be ignored.
-- *depend(inout:z) - task will both read and write variable *z*
+- *depend(out:y)* - task will write variable *y*, previous value of *y* will be ignored.
+- *depend(inout:z)* - task will both read and write variable *z*
 - The OpenMP scheduler considers task dependencies and automatically decides whether a task is ready for execution.
 
 The previous example rewritten with task dependencies will be:
