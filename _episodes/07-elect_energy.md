@@ -181,6 +181,10 @@ This is not too complicated, and worth doing because you will be able to decide 
 The examples of the same program written with AVX2 and AVX-512 Intrinsics are in the files *elect_energy_avx2.c* and *elect_energy_avx512.c*, respectively. The code is well annotated with explanations of all statements. 
 
 To summarize the vectorized algorithm:
+- allocate memory for _m512 vectors, each one hold 16 floating point values
+- memory must be aligned with 64 byte margins for optimal transfer 
+- pack data into _m512 vectors
+- accumulate interactions looping over 16x16 tiles 
 
 Compile the code and run it.
 ~~~
@@ -215,7 +219,6 @@ avx512            | 4.58 | 17.7
 Compilers are very conservative in automatic vectorization and in general they will use the safest solution. If compiler suspects data dependency, it will not parallelize code. The last thing compiler developers want is for a program to give the wrong results! But you can analyze the code, if needed modify it to eliminate data dependencies and try different parallelization strategies to optimize the performance.
 
 #### What Loops can be vectorized?
-
 - The number of iterations must be known (at runtime, not at compilation time) and remain constant for the duration of the loop. 
 - The loop must have single entry and single exit. For example no data-dependent exit.
 - The loop must have straight-line code. Because SIMD instructions perform the same operation on data elements it is not possible to switch instructions for different iterations. The exception is *if* statements that can be implemented as masks. For example the calculation is performed for all data elements, but the result is stored only for those elements for which the mask evaluates to true. 
