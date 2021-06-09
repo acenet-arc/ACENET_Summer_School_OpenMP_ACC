@@ -299,15 +299,27 @@ Now the code runs much faster!
 ### The *acc parallel construct*
 - Defines the region of the program that should be compiled for parallel execution on the accelerator device.
 - The *parallel loop* directive is an assertion by the programmer that it is both safe and desirable to parallelize the affected loop. 
-- The *parallel* construct allows finer-grained control of how the compiler will attempt to structure work on the accelerator. So it does not rely heavily on the compiler’s ability to automatically parallelize the code.
+- The *parallel loop* construct allows for much more control of how the compiler will attempt to structure work on the accelerator. The *loop* directive gives the compiler additional information about the next loop in the source code through several clauses
+    - *independent* – all iterations of the loop are independent
+    - *collapse(N)* - turn the next N loops into one, flattened loop
+    - *tile(N,[M])* break the next 1 or more loops into tiles based on the provided dimensions.
 
 An important difference between the *acc kernels* and *acc parallel* constructs is that with *kernels* the compiler will analyze the code and only parallelize when it is certain that it is safe to do so. 
 
 In some cases, the compiler may not be able to determine whether a loop is safe the parallelize, even if you can clearly see that the loop is safely parallel. The kernels construct gives the compiler maximum freedom to parallelize and optimize the code for the target accelerator.  It also relies most heavily on the compiler’s ability to automatically parallelize the code.
 
-### Make the code portable to multicore CPUs
+### Fine tuning parallel constructs: the *gang*, *worker*, and *vector* clauses
+OpenACC has 3 levels of parallelism:
+1. Vector threads work in SIMD parallelism
+2. Workers compute a vector
+3. Gangs have 1 or more workers. A gang have shared resources (cahce, streaming multiprocessor ). Gangs work independently of each other.
 
-Apply OpenMP directives 
+*gang*, *worker*, and *vector* can be added to a *loop* clause. Since different loops in a kernels region may be parallelized differently, fine-tuning is done as a parameter to the gang, worker, and vector clauses.
+
+### Make the  code portable to multicore CPUs
+We can add OpenMP directives along with the OpenACC directives. Then depending on what options are passed to the compiler we can build ether multiprocessor or accelerator versions.
+
+Let's apply OpenMP directives and 
 ~~~
 #pragma omp parallel for private(i) reduction(max:error)
 ~~~
@@ -317,9 +329,13 @@ to the loop at line 50 and
 ~~~
 #pragma omp parallel for private(i)
 ~~~
-to 
+to the loop at line 59
 {:.language-c}
 
+~~~
+nvc laplace2d.c -mp -O3 
+~~~
+{:.language-bash}
 [View NVIDIA HPC-SDK](https://docs.nvidia.com/hpc-sdk/compilers/index.html) documentation.
 
  

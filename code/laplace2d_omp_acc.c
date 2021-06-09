@@ -9,18 +9,19 @@ int main(int argc, char **argv)
 {
     FILE *output_unit;
     int i, j;
-    int n = 1024;
-    int m = 1024;            /* Size of the mesh */
+    int n = 2048;
+    int m = 2048;            /* Size of the mesh */
     int qn = (int)n * 0.5;   /* x-coordinate of the point heat source */
     int qm = (int)m * 0.5;   /* y-coordinate of the point heat source */
     float h = 0.05;          /* Instantaneous heat */
-    int iter_max = 1e8;      /* Maximum number of iterations */
+    int iter_max = 1e4;      /* Maximum number of iterations */
     const float tol = 1e-6f; /* Tolerance */
 
     struct timespec ts_start, ts_end;
     float time_total;
-    float ** U, **U_new;
-    float ** F;
+    float ** __restrict U; 
+    float ** __restrict U_new;
+    float ** __restrict F;
 
     /* Allocate memory */
     F = (float **)malloc(m * sizeof(float *)); /* Heat source array */
@@ -50,6 +51,7 @@ int main(int argc, char **argv)
 #pragma acc kernels
         {
             #pragma omp parallel for private(i) reduction(max: error)
+            // You can parallelize using parallel loops instead of kernels
             //  #pragma acc parallel loop
             for (j = 1; j < n - 1; j++)
             {
