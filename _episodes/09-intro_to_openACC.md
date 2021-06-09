@@ -164,6 +164,7 @@ icc -qopt-report=1 -qopt-report-phase=vec -O3 laplace2d.c
 Only the *for* loop at line 52 is vectorized, the code runs in 136 sec. 
 
 ### Parallelizing Jacobi Relaxation Code with OpenACC
+#### The *acc kernels* construct
 Let’s add a single, simple OpenACC directive before the block containing *for* loop nests at lines 50 and 59. 
 ~~~
 #pragma acc kernels
@@ -294,6 +295,15 @@ We need to transfer *U, Unew* and *F* to the accelerator, but we need only *U* b
 {:.language-c}
 
 Now the code runs much faster!
+
+### The *acc parallel construct*
+- Defines the region of the program that should be compiled for parallel execution on the accelerator device.
+- The *parallel loop* directive is an assertion by the programmer that it is both safe and desirable to parallelize the affected loop. 
+- The *parallel* construct allows finer-grained control of how the compiler will attempt to structure work on the accelerator. So it does not rely heavily on the compiler’s ability to automatically parallelize the code.
+
+An important difference between the *acc kernels* and *acc parallel* constructs is that with *kernels* the compiler will analyze the code and only parallelize when it is certain that it is safe to do so. 
+
+In some cases, the compiler may not be able to determine whether a loop is safe the parallelize, even if you can clearly see that the loop is safely parallel. The kernels construct gives the compiler maximum freedom to parallelize and optimize the code for the target accelerator.  It also relies most heavily on the compiler’s ability to automatically parallelize the code.
 
 ### Make the code portable to multicore CPUs
 
