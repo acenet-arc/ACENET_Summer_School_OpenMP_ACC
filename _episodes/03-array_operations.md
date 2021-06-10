@@ -152,7 +152,7 @@ To ensure the parallel *for* loop works correctly
 Now let's try adding up the elements of a matrix.
 Moving up to two dimensions adds a new layer of looping. The basic code looks like the following.
 ~~~
-/* --- File matrix_multiply_omp.c --- */
+/* --- File matrix_sum_omp.c --- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

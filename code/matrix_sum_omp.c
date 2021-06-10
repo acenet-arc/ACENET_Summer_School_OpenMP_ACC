@@ -1,4 +1,4 @@
-/* --- File matrix_multiply_omp.c --- */
+/* --- File matrix_sum_omp.c --- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
