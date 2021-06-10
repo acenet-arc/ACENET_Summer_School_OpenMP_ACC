@@ -14,7 +14,8 @@ permalink: index.html  # Is the only page that doesn't follow the pattern /:path
 > - the GNU C compiler (gcc)
 > - the Intel OneAPI (icc) 
 > - the Nvidia HPC SDK (nvc)
-> Exercises involve compiling and running C code. Familiarity with this language will be helpful but is not required.
+>
+> Exercises involve compiling and running C code. Familiarity with this language will be helpful but is not required.  
 {: .prereq}
 
 

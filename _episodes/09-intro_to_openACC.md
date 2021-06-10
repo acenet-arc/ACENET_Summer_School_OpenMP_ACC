@@ -25,8 +25,10 @@ CPUs are optimized to carry out tasks as quick as possible, while keeping the ab
  - PyCuDA. Gives access to CUDA functionality from Python code.
  - OpenACC. OpenACC offers a quick path to accelerated computing with less programming effort.
 
-Examples of OpenACC accelerated applications: VASP 6 (*ab initio* atomic scale modeling), TINKER 9 (molecular dynamics)
-[NVIDIA GPU Accelerated VASP 6 uses OpenACC to Deliver 15X More Performance](https://developer.nvidia.com/blog/nvidia-gpu-accelerated-vasp-6-uses-openacc-to-deliver-15x-more-performance/)
+Examples of OpenACC accelerated applications: 
+- VASP 6 (*ab initio* atomic scale modeling).[NVIDIA GPU Accelerated VASP 6 uses OpenACC to Deliver 15X More Performance](https://developer.nvidia.com/blog/nvidia-gpu-accelerated-vasp-6-uses-openacc-to-deliver-15x-more-performance/)
+- TINKER 9 (molecular dynamics)  
+
 
 ### OpenACC compilers
 
