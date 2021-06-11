@@ -318,7 +318,7 @@ OpenACC has 3 levels of parallelism:
 
 *gang*, *worker*, and *vector* can be added to a *loop* clause. Since different loops in a kernels region may be parallelized differently, fine-tuning is done as a parameter to the gang, worker, and vector clauses.
 
-### Portability from GPU to CPU
+### Portability from GPUs to CPUs
 We can add OpenMP directives along with the OpenACC directives. Then depending on what options are passed to the compiler we can build ether multiprocessor or accelerator versions.
 
 Let's apply OpenMP directives and 
