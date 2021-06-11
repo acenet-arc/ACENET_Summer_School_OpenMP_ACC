@@ -48,7 +48,7 @@ The philosophy of OpenMP is to not sacrifice ease of coding and maintenance in t
 
 ![](../fig/OpenMP-execution-model.svg)
 
-## Compiling OpenMP programs
+## Compiling OpenMP Programs
 Since OpenMP is meant to be used with either C/C++ or FORTRAN, you will need to know how to work with at least one of these languages. This workshop will use C as the language for the examples. 
 Before we start using a compiler let's load the most recent environment module:
 ~~~
@@ -76,7 +76,7 @@ wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/raw/gh-pages/
 As a reminder, a simple hello world program in C would look like the following.
 
 
-> ## Compiling C code
+> ## Compiling C Code
 > ~~~
 > /* --- File hello_world.c --- */
 > #include <stdio.h>
@@ -108,7 +108,7 @@ As a reminder, a simple hello world program in C would look like the following.
 > If you don't specify the output filename with the -o option compiler will use the default output name "a.out" (assembler output).
 {: .callout}
 
-> ## GCC on Compute Canada
+> ## GCC on Compute Canada Systems
 >
 > Currently the default environment on the general purpose clusters (Beluga, Cedar, Graham) is StdEnv/2020. The default compilers available in this environment on Graham and Beluga are Intel/2020.1.217 and gcc/9.3.0. On Cedar the default compiler is gcc/8.4.0.
 >
@@ -120,7 +120,7 @@ As a reminder, a simple hello world program in C would look like the following.
 {: .callout}
 
 ### A Very Quick Introduction to C  
-#### Preprocessor directives
+#### Preprocessor Directives
   - The `#include` directive tells the preprocessor to insert the contents of another file into the source code.
   - Include directives are typically used to include header files for C functions that are defined outside of the current source file:
 
@@ -168,7 +168,7 @@ As a reminder, a simple hello world program in C would look like the following.
   ~~~
    {: .language-c}
 
--  Skipping all loop statements  will result in an infinite loop: `for(;;)`
+- Skipping all loop statements  will result in an infinite loop: `for(;;)`
 
 #### Defining Functions 
 Function definitions have the following format:
@@ -193,9 +193,24 @@ Function definitions have the following format:
     ~~~
      {: .language-c}
 
-#### Using Memory 
+#### Pointers
+- The *&* operator returns the address of a variable. For example &*A* will give you the address of the variable *A* in the memory.
+- Pointers are special variables used to store addresses of variables rather than values. 
+- The statement:   
+~~~
+float * my_array;
+~~~
+   {:.language-c}
+declares that the variable *my_array* is a pointer to the location in memory where floating point numbers are stored
+- The *\** operator returns the value of the object pointed by a pointer
 
+#### Using Memory 
+- Static arrays are arrays created at compile time by specifying size in the source code, for example
+~~~
+int A[500];
+~~~
+    {: .language-c}
 - Static arrays are allocated on stack.
 - Size of stack-allocated arrays is limited by system-dependent threshold. Programs that attempt to stack-allocate arrays requiring more than this threshold will therefore crash as soon as they try to use the array.
-
-Dynamic memory allocation is when an executing program requests that the operating system give it a block of main memory. The program then uses this memory for some purpose. 
+- Dynamic memory allocation is when an executing program requests that the operating system give it a block of main memory.
+- The *malloc( )* is one of the functions used to allocate a block of memory dynamically.  
