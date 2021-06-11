@@ -15,7 +15,6 @@ keypoints:
 - "OpenMP libraries are built into all commonly used C, C++, or Fortran compilers"
 ---
 
-
 ## Shared Memory OpenMP Programming
 As we learned in the *General Parallel Computing* lesson, parallel programs come in two broad flavors: shared-memory and distributed memory or message-passing. In this lesson, we will be looking at shared-memory programming, with a focus on Open Multi-Processing (OpenMP) programming.
 
@@ -35,7 +34,6 @@ All commonly used compilers such as gcc, clang, Intel, Nvidia HPC, and Absoft su
 For an overview of the past, present and future of the OpenMP read the paper ["The Ongoing Evolution of OpenMP"](https://ieeexplore.ieee.org/document/8434208).
 
 ## OpenMP Execution Model
-
 The philosophy of OpenMP is to not sacrifice ease of coding and maintenance in the name of performance.
 
 - OpenMP programs realizes parallelism through the use of threads. Recollect that a thread is the smallest unit of computing that can be scheduled by an operating system. In other words a thread is a subroutine that can be scheduled to run autonomously. Threads exist within the resources of a single process. Without the process, they cease to exist.  
@@ -73,8 +71,8 @@ wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/raw/gh-pages/
 ~~~
 {:.language-bash}
 
-### A Very Quick Introduction to C  
-#### Preprocessor Directives
+## A Very Quick Introduction to C  
+### Preprocessor Directives
   - The `#include` directive tells the preprocessor to insert the contents of another file into the source code.
   - Include directives are typically used to include header files for C functions that are defined outside of the current source file:
 
@@ -103,7 +101,7 @@ wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/raw/gh-pages/
 
   - The block inside `#ifdef ... #endif` statements  is called a conditional group. Controlled code will be included in the output of the preprocessor only if `MACRO` (a block of C statements) is defined.
 
-#### Basic Syntax
+### Basic Syntax
 - Curly braces `{ ...  }` are used to group statements into a block of statements.  
 - Statement terminator is `;`  
 - For Loop syntax:  
@@ -124,7 +122,7 @@ wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/raw/gh-pages/
 
 - Skipping all loop statements  will result in an infinite loop: `for(;;)`
 
-#### Defining Functions 
+### Defining Functions 
 Function definitions have the following format:
   ~~~
   return_type function_name( parameter list ) {
@@ -147,7 +145,7 @@ Function definitions have the following format:
     ~~~
      {: .language-c}
 
-#### Pointers
+### Pointers
 - The *&* operator returns the address of a variable. For example &*A* will give you the address of the variable *A* in the memory.
 - Pointers are special variables used to store addresses of variables rather than values. 
 - The statement:   
@@ -158,7 +156,7 @@ float * my_array;
 declares that the variable *my_array* is a pointer to the location in memory where floating point numbers are stored
 - The *\** operator returns the value of the object pointed by a pointer
 
-#### Using Memory 
+### Using Memory 
 - Static arrays are arrays created at compile time by specifying size in the source code, for example
 ~~~
 int A[500];
@@ -169,7 +167,7 @@ int A[500];
 - Dynamic memory allocation is when an executing program requests that the operating system give it a block of main memory.
 - The *malloc( )* is one of the functions used to allocate a block of memory dynamically.  
 
-#### Compiling C Code
+### Compiling C Code
 A simple hello world program in C would look like the following.
 ~~~
 /* --- File hello_world.c --- */
@@ -188,7 +186,7 @@ gcc -o hello hello_world.c
 ~~~
 {: .language-bash}
 
-This gives you an executable file "hello" that will print out the text "Hello World". You run it with the command:
+This gives you an executable file *hello* that will print out the text "Hello World". You run it with the command:
 ~~~
 ./hello
 ~~~
@@ -197,7 +195,7 @@ This gives you an executable file "hello" that will print out the text "Hello Wo
 Hello World
 ~~~
 {: .output}
-- If you don't specify the output filename with the -o option compiler will use the default output name "a.out" (assembler output).
+- If you don't specify the output filename with the -o option compiler will use the default output name *a.out* (assembler output).
 
 > ## GCC on Compute Canada Systems
 >
