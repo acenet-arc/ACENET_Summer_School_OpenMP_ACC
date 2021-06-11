@@ -11,7 +11,6 @@ keypoints:
 - "tasks now allow the parallelization of applications exhibiting irregular parallelism such as recursive algorithms, and pointer-based data structures."
 ---
 ## Introduction
-
 The last construct we will look at is the *omp task*. It is the most recent addition to OpenMP specification introduced in version 3.0 in 2008. Older constructs worked well for many cases but there were limitations hampering development of rapidly developing advanced applications.   
 - Only loops with a known length at run time were allowed, and only finite number of parallel sections.
 
@@ -19,10 +18,11 @@ This didn’t work well with certain common problems such as recursive or pointe
 
 - Pointer chasing algorithms employ a series of irregular memory access patterns where the data of the previous memory access is required in order to determine the memory address of the next pointer.
 
- Another flow control statement that was hard to parallelize was the *while* loop with it's unknown number of iterations.
+Another flow control statement that was hard to parallelize was the *while* loop with it's unknown number of iterations.
 
 The *omp task* construct addresses these issues by generating tasks that are then executed by all available threads. 
 
+## The *omp task*
 What is a task?   
 - A task is composed of the code to be executed and the data environment (inputs to be used and outputs to be generated).
 
@@ -58,10 +58,8 @@ A typical program using tasks would follow the code shown below:
 
 If you need to have results from the tasks before you can continue, you can use the *taskwait* directive to pause your program until the tasks are done.
 
-### Example - finding smallest factor
-
+### Finding the Smallest Factor
 Let's use tasks to find the smallest factor of a large number (using 4993*5393 as test case). Start with the serial code:
-
 ~~~
 /* File: find_factor.c */
 #include <stdio.h>
@@ -180,7 +178,6 @@ This corrected code will generate two tasks and wait for both of them to be fini
 
 ### Controlling Task Execution Order
 In some cases a task may depend on another task, but not on all generated tasks. The *taskwait* directive in this case is too restrictive. 
-
 ~~~
 #pragma omp task /* task A */
 preprocess_data(A);
@@ -195,7 +192,6 @@ compute_stats(A);
 compute_stats(B);
 ~~~
 {:.language-c}
-
 
 In this case *task C* should be executed after *task A*, but it won’t run until the execution of *task B* is finished.
 
@@ -215,7 +211,6 @@ preprocess_data(A);
 preprocess_data(B);
 
 #pragma omp taskwait
-
 #pragma omp task depend(in:A)/* task C */
 compute_stats(A);
 #pragma omp task depend(in:B)/* task D */

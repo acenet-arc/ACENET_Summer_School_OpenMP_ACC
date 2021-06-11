@@ -17,7 +17,7 @@ As we learned in the *General Parallel Computing* lesson increasing performance 
 ### The GPU Architecture 
 CPUs are optimized to carry out tasks as quick as possible, while keeping the ability to quickly switch between operations. It’s nature is all about processing tasks in a serialized way. GPUs achieve high throughput by trading single-threaded performance in favor of several orders in magnitude more parallelism.
 
-### Tools for programming GPUs
+### Tools for Programming GPUs
  There are several tools available for programming GPU.
  - CUDA. CUDA is NVIDIA-specific programming model and language. You can get the most out of your GPU with CUDA. CUDA-C and CUDA-Fortran compilers are available. Difficult to program, porting existing C/C++ or Fortran code onto the GPU with CUDA requires significant code refactoring.
  - OpenMP via the `target` construct. [OpenMP on GPUs](https://on-demand.gputechconf.com/gtc/2018/presentation/s8344-openmp-on-gpus-first-experiences-and-best-practices.pdf)
@@ -30,13 +30,13 @@ Examples of OpenACC accelerated applications:
 - TINKER 9 (molecular dynamics)  
 
 
-### OpenACC compilers
+### OpenACC Compilers
 
 - GCC
 - PGI
 - Nvidia HPC SDK 
 
-### Solving the Discrete Poisson's Equation using Jacobi's Method.
+### Solving the Discrete Poisson's Equation Using Jacobi's Method.
 Poisson's equation arises in heat flow, diffusion, electrostatic and gravitational potential, fluid dynamics, .. etc. The governing equations of these processes are partial differential equations, which describe how each of the variables changes as a function of all the others.
 
 $$ \nabla^2U(x,y)=f(x,y) $$
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
 ~~~
 {:.language-c}
 
-#### Performance of the serial code
+#### Performance of the Serial Code
 Compile and run
 ~~~
 gcc laplace2d.c -lm -O3
@@ -155,7 +155,7 @@ gcc laplace2d.c -lm -O3 -fopt-info-vec-missed
 ~~~
 {:.language-bash}
 
-#### Performance of the auto-vectorized code
+#### Performance of the Auto-vectorized Code
 Try Intel compiler:
 ~~~
 module load StdEnv/2020 intel/2021.2.0
@@ -166,7 +166,7 @@ icc -qopt-report=1 -qopt-report-phase=vec -O3 laplace2d.c
 Only the *for* loop at line 52 is vectorized, the code runs in 136 sec. 
 
 ### Parallelizing Jacobi Relaxation Code with OpenACC
-#### The *acc kernels* construct
+#### The *acc kernels* Construct
 Let’s add a single, simple OpenACC directive before the block containing *for* loop nests at lines 50 and 59. 
 ~~~
 #pragma acc kernels
@@ -212,7 +212,7 @@ nvc laplace2d.c -O3 -acc -ta=tesla -Minfo=accel
 
 No, the compiler detected data dependency in the loops and refused to parallelize them. What is the problem?
 
-#### The *__restrict* type qualifier
+#### The *__restrict* Type Qualifier
 Our data arrays (U, Unew, F) are dynamically allocated and are accessed via pointers. To be more precise via pointers to pointers (float **). A pointer is the address of a location in memory. More than one pointer can access the same chunk of memory in the C language, potentially creating data dependency. How can this happen?
   
 Consider a loop:
@@ -275,7 +275,7 @@ What else may be the problem?
 
 The problem is that the data is copied to the GPU every time the program enters the kernels region and copies the data back to the CPU each time it exits the kernels region. The transfer of data from CPU to GPU is much slower than transfers from the main memory to CPU or from video memory to GPU, so it becomes a huge bottleneck. We don't need to transfer data at every loop iteration. We could transfer data once at the beginning of the calculations and get it out at the end. OpenACC has a directive to tell the compiler when data needs to be transferred.
 
-#### The *acc data* directive
+#### The *acc data* Construct
 The *acc data* construct has five clauses:
 - copy
 - copyin
@@ -298,7 +298,7 @@ We need to transfer *U, Unew* and *F* to the accelerator, but we need only *U* b
 
 Now the code runs much faster!
 
-### The *acc parallel construct*
+### The *acc parallel* Construct
 - Defines the region of the program that should be compiled for parallel execution on the accelerator device.
 - The *parallel loop* directive is an assertion by the programmer that it is both safe and desirable to parallelize the affected loop. 
 - The *parallel loop* construct allows for much more control of how the compiler will attempt to structure work on the accelerator. The *loop* directive gives the compiler additional information about the next loop in the source code through several clauses
@@ -310,7 +310,7 @@ An important difference between the *acc kernels* and *acc parallel* constructs 
 
 In some cases, the compiler may not be able to determine whether a loop is safe the parallelize, even if you can clearly see that the loop is safely parallel. The kernels construct gives the compiler maximum freedom to parallelize and optimize the code for the target accelerator.  It also relies most heavily on the compiler’s ability to automatically parallelize the code.
 
-### Fine tuning parallel constructs: the *gang*, *worker*, and *vector* clauses
+### Fine Tuning Parallel Constructs: the *gang*, *worker*, and *vector* Clauses
 OpenACC has 3 levels of parallelism:
 1. Vector threads work in SIMD parallelism
 2. Workers compute a vector
@@ -318,7 +318,7 @@ OpenACC has 3 levels of parallelism:
 
 *gang*, *worker*, and *vector* can be added to a *loop* clause. Since different loops in a kernels region may be parallelized differently, fine-tuning is done as a parameter to the gang, worker, and vector clauses.
 
-### Make the  code portable to multicore CPUs
+### Portability from GPU to CPU
 We can add OpenMP directives along with the OpenACC directives. Then depending on what options are passed to the compiler we can build ether multiprocessor or accelerator versions.
 
 Let's apply OpenMP directives and 

@@ -16,7 +16,7 @@ keypoints:
 
 One of the classic applications of programming is linear algebra, in all of its beauty and complexity. We will use a few simple problems to see how to execute loops in parallel using OpenMP.
 
-## Multiplying an array by a constant
+## Multiplying an Array by a Constant
 The simplest problem is applying some function to an array of numbers. An example is multiplying each value by some constant number. In serial code you would loop over all array elements to do this multiplication:
 
 ~~~
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 - We added calls to *clock_gettime( )* function declared in the *time.h* header file to get the start and end times of the heavy work being done by the *for* loop. 
 - We used counts of how many seconds and how many nanoseconds elapsed, that are returned in the structures *ts_start* and *ts_end*. Then we did some math to convert the elapsed time to milliseconds.
 
-### Compiling and running a serial version
+### Compiling and Running a Serial Version
 Compile the program. 
 ~~~
 gcc array_multiply.c -o array_multiply
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 ~~~
 {: .language-c}
 
-### Compiling and running a parallel version
+### Compiling and Running a Parallel Version
 Compile the program. 
 ~~~
 gcc array_multiply_omp.c -o array_multiply_omp -fopenmp
@@ -137,7 +137,7 @@ srun -c4 --mem-per-cpu=1000 array_multiply_omp
 ~~~
 {:.language-bash}
 
-> ## Using threads
+> ## Using Threads
 > Run the program with different number of threads and observe how the runtime changes.  
 > - What happens to the runtime when you change the number of threads?
 {: .challenge}
@@ -148,7 +148,7 @@ To ensure the parallel *for* loop works correctly
 - you must not change the value of *size* within one of the iterations.
 - you must not use a call to `break()` or `exit()` within the *for* loop, either. These functions pop you out of the *for* loop before it is done.
 
-## Summing the values in a matrix
+## Summing the Values in a Matrix
 Now let's try adding up the elements of a matrix.
 Moving up to two dimensions adds a new layer of looping. The basic code looks like the following.
 ~~~
@@ -227,7 +227,7 @@ int main(int argc, char **argv)
 > {: .solution}
 {: .challenge}
 
-### OpenMP *private* clause
+### The *omp private* Clause
 To run the above task correctly in parallel each thread must have its own copy of the variable *j*. This can be achieved by declaring variables as *private*:
 
 ~~~
@@ -244,7 +244,7 @@ When a variable is declared private, OpenMP replicates this variable and assigns
 
 Thus another way to fix this problem is to define *j* inside the parallel *for* loop. That's perfectly valid, but it will require changing code. One of the goals of OpenMP is to allow parallelization by only adding pragma statements that can be enabled or disabled at compile time.
 
-## Be Careful with Data Dependencies
+### Be Careful with Data Dependencies
 In turning a serial program into a parallel program, it's vital to maintain the correctness of the serial program. Data dependency is an important concept we use to guarantee that we're transforming a serial program into an equivalent (in terms of its output) parallel program.
 
 What is data dependency? If two statements read or write the same memory location, and at least one of the statements writes that memory location, then there is a *data dependency* on that memory location between the two statements. Loops with data dependencies can not be executed in parallel because the results may not be correct.
@@ -263,7 +263,7 @@ If we run to run this loop in parallel different iterations would be carried out
 
 ![](../fig/Data_Dep.svg)
 
-#### Types of data dependencies:
+#### Types of Data Dependencies:
 Since either of the two statements can read or write a variable, there are four types of data dependencies.
 
 - FLOW (READ after WRITE), like the last example, when one statement uses the results of another.
@@ -314,7 +314,7 @@ Since either of the two statements can read or write a variable, there are four 
 
 Not everything can be parallelized. If there is data dependency you may need to modify your algorithm to be more parallel-friendly. Spend some time (drawing diagrams may help) to see what happens when two (or more) threads work simultaneously on a loop. It's not pretty. One of the strategies for solving some data dependency problems may be to write into a new copy of an array and at the end of each iteration update old from new. 
 
-## Thread-safe functions
+### Thread-safe Functions
 Another important concept is that of a *thread-safe* function.  
 
 Consider this code;
@@ -364,8 +364,8 @@ You need to be aware when writing multi-threaded programs whether functions you 
 
 For more, see [Thread safety](https://en.wikipedia.org/wiki/Thread_safety).
 
-### Optimizing performance
-#### CPU cache and data locality
+### Optimizing Performance
+#### CPU Cache and Data Locality
 Let's do a quick experiment. Compile our matrix_multiply_omp.c code with Intel compiler:
 ~~~
 module load StdEnv/2020 intel/2021.2.0
@@ -434,7 +434,7 @@ This will not happen if in out inner loop we iterate through elements of a colum
 ~~~
 In this case, CPU will need to access main memory to load each matrix element.
 
-#### Avoid parallel overhead at low iteration counts
+#### Avoiding Parallel Overhead at Low Iteration Counts
 Creating a thread is expensive, it may cost thousands of CPU cycles. f you have a function that requires only hundreds of cycles, it is wasteful to parallelize it. The overhead alone will set you back. This can be avoided using conditional parallelization:
 
 ~~~
@@ -446,5 +446,5 @@ for(i = 0; i < N; i++)
 ~~~
 {:.language-c}
 
-#### Minimize parallelization overhead
+#### Minimizing Parallelization Overhead
 If the inner loop is parallelized, in each iteration step of the outer loop, a parallel region is created. This causes parallelization overhead.

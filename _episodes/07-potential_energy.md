@@ -16,7 +16,7 @@ Calculating the potential energy of many-body systems is a common problem arisin
 
 As the following parallelization example, we will consider calculating the total electrostatic potential energy of a set of charges in 3D. As usual, we start with the serial code, parallelize it and see how much faster we can solve this problem in parallel. Recollect that AVX512 CPU cores can apply instructions to 16 floating-point numbers, so the parallel version using ten CPU cores theoretically should run 10x16=160 times faster than a serial code. This speedup is, however, a theoretical maximum assuming negligible parallelization overhead and 100% parallel code. What real-life speedup will we be able to get?
 
-## The algorithm
+## The Algorithm
 To compute total electrostatic potential energy we need to sum interactions between all pairs of charges:
 
 $$ E = \sum\frac{charge_i*charge_j}{distance_{i,j}}$$
@@ -91,11 +91,11 @@ Our goal is to speed up calculation leveraging both levels of parallelism availa
 
 Writing vectorized code can take additional time but is mostly worth the effort, because the performance increase may be substantial. Modern C and Fortran compilers are capable to automatically generate SIMD instructions. However, not all code can be auto-vectorized as there are many potential obstacles for auto-vectorization. The discussing detailed guidelines to writing vectorization-friendly code are outside the scope of this workshop. In this session we will briefly look at the performance benefits of vectorization learn how to use auto-vectorization compiler feature, and how to get information about details of auto-vectorization results. 
 
-## Performance considerations 
-### Serial performance
+## Performance Considerations 
+### Serial Performance
 First we need to compile the serial version to use as a reference for calculation of parallel scaling. For this section we will use Intel compiler. 
 
-#### Using the auto-vectorizer in Intel compiler
+#### Using the Auto-vectorizer in Intel Compilers
 
 At optimization levels *-O2* or higher Intel compiler automatically tries to vectorize code. To compile an unvectorized version with the same optimization level we need to turn off auto vectorization.
 
@@ -144,7 +144,7 @@ The runtime of the serial version is about 80 sec on a real cluster with Skylake
 {:.callout}
 
 
-### Parallel performance
+### Parallel Performance
 #### Using Automatic Vectorization
 Next we will use use the auto-vectorizer in the compiler. This means do nothing except ensuring that the coding will not prevent vectorization. Many things, can prevent automatic vectorization or produce suboptimal vectorized code. 
 
@@ -206,7 +206,7 @@ srun ./a.out
 
 The benchmark on all versions on the real cluster is below. As you can see,  AVX-512 version is 1.7x faster than AVX2. Adapting AVX2 to AVX-512 is very straightforward. 
 
-#### Benchmark n=60, single thread, cluster Siku
+#### Benchmark n=60, Single Thread, Cluster Siku
 
  Version          | Time |  Speedup
 ------------------|------|
@@ -218,17 +218,17 @@ avx512            | 4.58 | 17.7
 
 Compilers are very conservative in automatic vectorization and in general they will use the safest solution. If compiler suspects data dependency, it will not parallelize code. The last thing compiler developers want is for a program to give the wrong results! But you can analyze the code, if needed modify it to eliminate data dependencies and try different parallelization strategies to optimize the performance.
 
-#### What Loops can be vectorized?
+#### What Loops can be Vectorized?
 - The number of iterations must be known (at runtime, not at compilation time) and remain constant for the duration of the loop. 
 - The loop must have single entry and single exit. For example no data-dependent exit.
 - The loop must have straight-line code. Because SIMD instructions perform the same operation on data elements it is not possible to switch instructions for different iterations. The exception is *if* statements that can be implemented as masks. For example the calculation is performed for all data elements, but the result is stored only for those elements for which the mask evaluates to true. 
 - No function calls are allowed. Only intrinsic vectorized math functions or functions that can be inlined are allowed.
  
-### Adding OpenMP parallelization 
+### Adding OpenMP Parallelization 
 
 The vectorized program can run in parallel on each of the cores of modern multicore CPUs, so the maximum theoretical speedup should be proportional to the numbers of threads. 
 
-> ## Parallelize the code
+> ## Parallelize the Code
 > 1. Decide what variable or variables should be made private, and then compile and test the code.
 > 2. Run on few different numbers of CPUs. How does the performance scale?
 >
@@ -243,7 +243,7 @@ The vectorized program can run in parallel on each of the cores of modern multic
 
 The benchmark on all versions on the real cluster is below. The speedup of the OpenMP version matches our expectations.
 
-#### Benchmark n=60, OpenMP 10 threads, cluster Siku.
+#### Benchmark n=60, OpenMP 10 Threads, Cluster Siku.
 
 Version            | Time   |  Speedup
 -------------------|--------|
@@ -253,7 +253,7 @@ auto-vect, skylake | 1.43   | 56.8
 avx2               | 0.764  | 106.3
 avx512             | 0.458  | 177.3
 
-### OpenMP scheduling
+### OpenMP Scheduling
 OpenMP automatically partitions the iterations of a *parallel for* loop. By default it divides all iterations in a number of chunks equal to the number of threads. The number of iterations in each chunk is the same, and each thread is getting one chunk to execute. This is *static* scheduling, in which all iterations are allocated to threads before they execute any loop iterations. However, a *static* schedule can be non-optimal. This is the case when the different iterations need different amounts of time. This is true for our program computing potential. As we are computing triangular part of the interaction matrix *static* scheduling with the default *chunk size* will lead to uneven load.
 
 This program can be improved with a *dynamic* schedule. In *dynamic* scheduling, OpenMP assigns one iteration to each thread. Threads that complete their iteration will be assigned the next iteration that hasn’t been executed yet. The allocation process continues until all the iterations have been distributed to threads.
@@ -269,7 +269,7 @@ Both scheduling types also take a *chunk size* argument; larger chunks mean less
 
 Let's add a `schedule(dynamic)` or `schedule(static,100)` clause and see what happens.
 
-> ## Experiment with scheduling
+> ## Experiment with Scheduling
 > 1. Try different scheduling types. How does it affect the performance? What seems to work best for this problem? Can you suggest the reason? 
 > 2. Does the optimal scheduling change much if you grow the problem size? That is, if you make *n* bigger?
 > 3. There's a third scheduling type, *guided*, which starts with large chunks and gradually decreases the chunk size as it works through the iterations. Try it out too, if you like. With  the *guided* scheduling, the chunk parameter is the smallest chunk size OpenMP will try.
@@ -281,7 +281,7 @@ Let's add a `schedule(dynamic)` or `schedule(static,100)` clause and see what ha
 {: .challenge}
 
 
-> ## Example of the code that can be vectorized:
+> ## Example of the Code that can be Vectorized:
 >
 > ~~~
 > /* File: vectorize_1.c */

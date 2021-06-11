@@ -18,7 +18,7 @@ A data race occurs when two threads access the same memory without proper synchr
 
 In this section, we will use two example problems: parallel numerical integration and finding maximum in an array to look at how to control access to global variables.
 
-## Parallel numerical integration
+## Parallel Numerical Integration
 As our example, let's integrate the sine function from 0 to $\pi$. This is the same as the area under the first half of a sine curve. To compute approximation of an integral we will use the simplest Rectangle Method. We will partition area under the curve into a number of very narrow rectangles and add areas of these small shapes together. The single-threaded version is:
 ~~~
 /* --- File integrate_sin.c --- */
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 ~~~
 {:.language-c}
 
-### Compiling code with mathematical functions
+### Compiling Code with Mathematical Functions
  To compile a C program that uses math library with GCC we need to explicitly link to it:
  ~~~
  gcc -o integrate integrate_sin_omp.c -lm
@@ -85,10 +85,10 @@ The program works, but the result is incorrect when we use more than one thread.
 
 The data dependency on *total* leads to a race condition. Since we are updating a global variable, there is a race between the various threads as to who can read and then write the value of *total*. Multiple threads could read the current value, before a working thread can write the result of its addition. So these reading threads essentially miss out on some additions to the total.
 
-### How to avoid data race conditions?
+### How to Avoid Data Race Conditions?
 One strategy to avoid data race is to synchronize threads to ensure that the variable is accessed in the right order. OpenMP provides a number of ways to ensure that threads are executed in the right order. 
 
-#### The *omp critical* directive
+#### The *omp critical* Directive
 Race conditions can be avoided by adding a *critical* directive. A *critical* directive only allows one thread at a time to run some block of code.
 ~~~
 /* --- File integrate_sin_omp.c --- */
@@ -121,7 +121,7 @@ The *critical* directive is a very general construct; it can be applied to any a
 
 Let's add the *omp critical* directive to the statement in the main loop and rerun the code. The addition of the *critical* directive slows down the program relative to the serial version. And if we run it with more threads, it slows down even more. Using *critical*, in this case, is a wrong decision because *critical* serializes the whole loop. 
 
-#### The *omp atomic* directive
+#### The *omp atomic* Directive
 Another way to avoid race conditions is to use *omp atomic* directive. The *omp atomic* directive is similar to *critical* but one thread being in an atomic operation doesn't block any other atomic operations about to happen. Where available, *atomic* takes advantage on the CPU instructions providing atomic operations. Depending on the CPU architecture, some CPU instructions such as such as read-modify-write, fetch-and-add, compare-and-swap, ..etc) are atomic. These instructions perform multiple things in memory in a single, atomic step which can not be interrupted. In that case there's no lock/unlock needed on entering/exiting the line of code, it just does the atomic operation, and hardware (or OS) ensures that it is not interfered with. Another advantage of the *omp atomic* directive is much lower overhead.
 
 The downsides are that it can be used only to control a single statement and the set of operations that atomic supports is restricted. Of course, with both *omp critical* and *omp atomic*, you incur the cost of serialization.
@@ -183,7 +183,7 @@ Recompile the code and execute. Now we got the right answer, and x3.7 speedup wi
 
 In addition to summation OpenMP supports several other reduction operations, such as multiplication, minimum, maximum, logical operators. Next, we will look at other uses of reduction variables.
 
-## Finding the maximum value in an array
+## Finding the Maximum Value in an Array
 Let's say that we need to search through an array to find the largest value. How could we do this type of search in parallel? Let's begin with the serial version.
 
 ~~~
