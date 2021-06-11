@@ -73,52 +73,6 @@ wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/raw/gh-pages/
 ~~~
 {:.language-bash}
 
-As a reminder, a simple hello world program in C would look like the following.
-
-
-> ## Compiling C Code
-> ~~~
-> /* --- File hello_world.c --- */
-> #include <stdio.h>
-> #include <stdlib.h>
->
-> int main(int argc, char **argv) {
->   printf("Hello World\n");
-> }
-> ~~~
-> {: .language-c}
-> 
-> In order to compile this code, you would need to use the following command:
->
-> ~~~
-> gcc -o hello hello_world.c
-> ~~~
-> {: .language-bash}
->
-> This gives you an executable file "hello" that will print out the text "Hello World". You run it with the command:
->
-> ~~~
-> ./hello
-> ~~~
-> {: .language-bash}
-> ~~~
-> Hello World
-> ~~~
-> {: .output}
-> If you don't specify the output filename with the -o option compiler will use the default output name "a.out" (assembler output).
-{: .callout}
-
-> ## GCC on Compute Canada Systems
->
-> Currently the default environment on the general purpose clusters (Beluga, Cedar, Graham) is StdEnv/2020. The default compilers available in this environment on Graham and Beluga are Intel/2020.1.217 and gcc/9.3.0. On Cedar the default compiler is gcc/8.4.0.
->
-> To load another compiler you can use the command *module load*. For example, the command to load gcc version 10.2.0 is: 
->~~~
->module load gcc/10.2.0
->~~~
->{: .language-bash}
-{: .callout}
-
 ### A Very Quick Introduction to C  
 #### Preprocessor Directives
   - The `#include` directive tells the preprocessor to insert the contents of another file into the source code.
@@ -214,3 +168,45 @@ int A[500];
 - Size of stack-allocated arrays is limited by system-dependent threshold. Programs that attempt to stack-allocate arrays requiring more than this threshold will therefore crash as soon as they try to use the array.
 - Dynamic memory allocation is when an executing program requests that the operating system give it a block of main memory.
 - The *malloc( )* is one of the functions used to allocate a block of memory dynamically.  
+
+#### Compiling C Code
+A simple hello world program in C would look like the following.
+~~~
+/* --- File hello_world.c --- */
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char **argv) {
+  printf("Hello World\n");
+}
+~~~
+{: .language-c}
+
+In order to compile this code, you would need to use the following command:
+~~~
+gcc -o hello hello_world.c
+~~~
+{: .language-bash}
+
+This gives you an executable file "hello" that will print out the text "Hello World". You run it with the command:
+~~~
+./hello
+~~~
+{: .language-bash}
+~~~
+Hello World
+~~~
+{: .output}
+- If you don't specify the output filename with the -o option compiler will use the default output name "a.out" (assembler output).
+
+> ## GCC on Compute Canada Systems
+>
+> Currently the default environment on the general purpose clusters (Beluga, Cedar, Graham) is StdEnv/2020. The default compilers available in this environment on Graham and Beluga are Intel/2020.1.217 and gcc/9.3.0. On Cedar the default compiler is gcc/8.4.0.
+>
+> To load another compiler you can use the command *module load*. For example, the command to load gcc version 10.2.0 is: 
+>~~~
+>module load gcc/10.2.0
+>~~~
+>{: .language-bash}
+{: .callout}
+
