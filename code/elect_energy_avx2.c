@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 	/* Treat the remainder. The last vector is padded with zeros */
 	if (v_element_count != 0)
 	{
-		for (float v = n * a * 2; v_element_count < 16; v_element_count++, v += 1)
+		for (float v = n * a * 2; v_element_count < 8; v_element_count++, v += 1)
 		{
 			tmp_vec[0][v_element_count] = v;
 			tmp_vec[1][v_element_count] = 0.0;
