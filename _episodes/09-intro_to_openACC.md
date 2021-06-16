@@ -29,9 +29,7 @@ Examples of OpenACC accelerated applications:
 - VASP 6 (*ab initio* atomic scale modeling).[NVIDIA GPU Accelerated VASP 6 uses OpenACC to Deliver 15X More Performance](https://developer.nvidia.com/blog/nvidia-gpu-accelerated-vasp-6-uses-openacc-to-deliver-15x-more-performance/)
 - TINKER 9 (molecular dynamics)  
 
-
 ### OpenACC Compilers
-
 - GCC
 - PGI
 - Nvidia HPC SDK 
@@ -53,6 +51,9 @@ This equation describes, for example, steady-state temperature of a uniform squa
 - For discretization on a uniform spatial grid $ n\times m $ the solution can be found by iteratively computing next value at the grid point $ i,j $ as an average of its four neighboring values and the function $ f(i,j) $.
 
 $$ U(i,j,m+1) = ( U(i-1,j,m) + U(i+1,j,m) + U(i,j-1,m) + U(i,j+1,m) + f(i,j) )/4 $$
+
+### Solution
+![](../fig/laplace.png)
 
 #### Serial Jacobi Relaxation Code
 ~~~

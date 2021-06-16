@@ -10,6 +10,14 @@ keypoints:
 - "Different loop scheduling may compensate for unbalanced loop iterations"
 ---
 
+// mandel color https://plus.maths.org/issue9/features/mandelbrot/pas/mbrot1.pas
+
+C max = 0xffffff
+R = C/(256^2);
+G = (C/256) % 256;
+B = C%256;
+
+
 The <a href="https://en.wikipedia.org/wiki/Mandelbrot_set">Mandelbrot set</a>
 was a hot subject of computer art in the 1980s.  The algorithm is quite simple:
 - For each point on the screen, do an iterative calculation and decide whether the calculation diverges or not. Color that spot on the screen according to how many iterations it took to diverge or black if it didn't diverge in 1000 iterations.
@@ -158,6 +166,7 @@ Now comes the parallelization.
 > ## Parallelize the Mandelbrot Code
 > 1. Decide what variable or variables should be made private, and then compile and test the code.
 > 2. Run on few different numbers of CPUs. How does the performance scale?
+> 3. Try different scheduling types. How does it affect the performance? What seems to work best for this problem? 
 {: .challenge}
 
  
