@@ -52,8 +52,8 @@ This equation describes, for example, steady-state temperature of a uniform squa
 
 $$ U(i,j,m+1) = ( U(i-1,j,m) + U(i+1,j,m) + U(i,j-1,m) + U(i,j+1,m) + f(i,j) )/4 $$
 
-### Solution
-![](../fig/laplace.png)
+#### Solution
+![](../fig/laplace.png){:width="400"}
 
 #### Serial Jacobi Relaxation Code
 ~~~

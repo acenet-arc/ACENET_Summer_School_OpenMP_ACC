@@ -10,152 +10,83 @@ keypoints:
 - "Different loop scheduling may compensate for unbalanced loop iterations"
 ---
 
-// mandel color https://plus.maths.org/issue9/features/mandelbrot/pas/mbrot1.pas
-
-C max = 0xffffff
-R = C/(256^2);
-G = (C/256) % 256;
-B = C%256;
-
-
 The <a href="https://en.wikipedia.org/wiki/Mandelbrot_set">Mandelbrot set</a>
 was a hot subject of computer art in the 1980s.  The algorithm is quite simple:
-- For each point on the screen, do an iterative calculation and decide whether the calculation diverges or not. Color that spot on the screen according to how many iterations it took to diverge or black if it didn't diverge in 1000 iterations.
+- For each point on the screen, do an iterative calculation and decide whether the calculation diverges or not. 
+- Color that spot on the screen according to how many iterations it took to diverge or brown if it didn't diverge in 1000 iterations.
+
+
 
 ~~~
-# include <stdlib.h>
-# include <stdio.h>
-# include <math.h>
-# include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
 
-int main ( )
+int main()
 {
-int m = 1000;
-int n = 1000;
+  int m = 2048;         /* Image x - dimension */
+  int n = 2048;         /* Image y - dimension */
+  double lim = 4.0;     /* Limit to determine convergence */
+  int count_max = 1000; /* maximum number of iterations */
+  /* Region of interest */
+  double x_max = 1.25;
+  double x_min = -2.25;
+  double y_max = 1.75;
+  double y_min = -1.75;
 
-struct timespec ts_start, ts_end;
-float time_total;
-int c;
-int count_max = 1000;
-int i, j, k;
-int jhi, jlo;
-char *output_filename = "mandelbrot.ppm";
-FILE *output_unit;
-int **r, **g, **b, **count;
-double x_max =   1.25;
-double x_min = - 2.25;
-double x, x1, x2;
-double y_max =   1.75;
-double y_min = - 1.75;
-double y, y1, y2;
-int i4_min ( int i1, int i2 );
+  struct timespec ts_start, ts_end;
+  float time_total;
+  int i, j, k;
+  FILE *output_unit;
+  int **count;
+  double x, x1, x2, y, y1, y2;
 
-/* Variables:
-i, j - loop variables
-k - pixel iteration variable
-n, m - width and height of the image
-x, x1, x2, y, y1, y2 - pixel coordinates mapped to the image range [n,m]
-r, g, b - red, green, blue pixel color values [0-255] */
+  count = (int **)malloc(m * sizeof(int *));
+  for (i = 0; i < m; i++)
+    count[i] = malloc(n * sizeof(int));
 
-/* Allocate memory for pixels */
-r=(int**)malloc(m*sizeof(int*));
-for(i=0;i<m;i++)
-  r[i]=malloc(n*sizeof(int));
-g=(int**)malloc(m*sizeof(int*));
-for(i=0;i<m;i++)
-  g[i]=malloc(n*sizeof(int));
-b=(int**)malloc(m*sizeof(int*));
-for(i=0;i<m;i++)
-  b[i]=malloc(n*sizeof(int));
-count=(int**)malloc(m*sizeof(int*));
-for(i=0;i<m;i++)
-  count[i]=malloc(n*sizeof(int));
-
-/* Record start time */ 
-clock_gettime(CLOCK_MONOTONIC, &ts_start);
-
-/* Carry out the iteration for each pixel, determining COUNT */
-for ( i = 0; i < m; i++ )
+  clock_gettime(CLOCK_MONOTONIC, &ts_start);
+  /* Carry out the iteration for each pixel, determining the number   */
+  /* of iterations required for the new point (x2,y2) to move away    */
+  /* from the original point (x,y) by the predefined distance (limit) */
+  for (i = 0; i < m; i++)
   {
-    y = ((i-1)*y_max + (m-i)*y_min)/(m-1);
-    for ( j = 0; j < n; j++ )
-      {
-      x = ((j-1)*x_max + (n-j)*x_min)/(n-1);
+    y = ((i - 1) * y_max + (m - i) * y_min) / (m - 1);
+    for (j = 0; j < n; j++)
+    {
+      x = ((j - 1) * x_max + (n - j) * x_min) / (n - 1);
       count[i][j] = 0;
       x1 = x;
       y1 = y;
-
-      for ( k = 1; k <= count_max; k++ )
-        {
-          x2 = x1*x1 - y1*y1 + x;
-          y2 = 2*x1*y1 + y;
-
-          if (x2 < -2.0 || 2.0 < x2 || y2 < -2.0 || 2.0 < y2 )
-          {
-          count[i][j] = k;
-          break;
-        }
+      /* Loop checking convergence */
+      k=0;
+      while ((k++ < count_max) && (x1*x1 + y1*y1 < lim))
+      {
+        x2 = x1 * x1 - y1 * y1 + x;
+        y2 = 2 * x1 * y1 + y;
         x1 = x2;
         y1 = y2;
       }
-      /* If count is 0 the point is not in set */
-      if ( ( count[i][j] % 2 ) == 1 )
-      {
-        r[i][j] = 255;
-        g[i][j] = 255;
-        b[i][j] = 255;
-      }
-      else
-      {
-        c = (int) (255.0*(1-log(count[i][j])/log(count_max)));
-        r[i][j] = c;
-        g[i][j] = c;
-        b[i][j] = c;
-      }
+      count[i][j] = k;
     }
   }
+  clock_gettime(CLOCK_MONOTONIC, &ts_end);
+  time_total = (ts_end.tv_sec - ts_start.tv_sec) * 1e9 + (ts_end.tv_nsec - ts_start.tv_nsec);
+  printf("\nTotal time is %f ms", time_total / 1e6);
 
-clock_gettime(CLOCK_MONOTONIC, &ts_end);
-time_total = (ts_end.tv_sec - ts_start.tv_sec)*1e9 + (ts_end.tv_nsec - ts_start.tv_nsec);
-printf("\nTotal time is %f ms", time_total/1e6);
-
-/* Write data to an ASCII PPM file. */
-output_unit = fopen ( output_filename, "wt" );
-
-fprintf ( output_unit, "P3\n" );
-fprintf ( output_unit, "%d  %d\n", n, m );
-fprintf ( output_unit, "%d\n", 255 );
-
-for ( i = 0; i < m; i++ )
-{
-for ( jlo = 0; jlo < n; jlo = jlo + 4 )
-  {
-    jhi = i4_min ( jlo + 4, n );
-    for ( j = jlo; j < jhi; j++ )
-      {
-        fprintf ( output_unit, "  %d  %d  %d", r[i][j], g[i][j], b[i][j] );
-      }
-      fprintf ( output_unit, "\n" );
-  }
-}
-
-fclose ( output_unit );
-printf ( "\n" );
-printf ( "  Graphics data written to \"%s\".\n", output_filename );
-printf ( "\n" );
-return 0;
-}
-
-int i4_min ( int i1, int i2 ) {
-int value;
-if ( i1 < i2 )
-  value = i1;
-else
-  value = i2;
-return value;
+  /* Write data to a binary file for visualization with paraview */
+  char *output_filename = "mandel_2048x2048_int.raw";
+  output_unit = fopen(output_filename, "wb");
+  for (j = 0; j < n; j++)
+    fwrite(count[j], m * sizeof(int), 1, output_unit);
+  fclose(output_unit);
 }
 ~~~
 {: .language-c}
+
+#### Calculation result visualized with paraview. 
+![](../fig/mandel.png){:width="400"}
 
 - First, compile and run the program without OpenMP.
 - Note how long it took to run. A millisecond is not enough to get good performance measurements on.
