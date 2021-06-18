@@ -98,6 +98,14 @@ Now comes the parallelization.
 > 1. Decide what variable or variables should be made private, and then compile and test the code.
 > 2. Run on few different numbers of CPUs. How does the performance scale?
 > 3. Try different scheduling types. How does it affect the performance? What seems to work best for this problem? 
+>
+>> ## Solution
+>>~~~
+>> #pragma omp parallel for private (i,j,k,x,x1,x2,y,y1,y2) schedule(dynamic)
+>>~~~
+>>{:.language-c}
+>>
+> {: .solution}
 {: .challenge}
 
  

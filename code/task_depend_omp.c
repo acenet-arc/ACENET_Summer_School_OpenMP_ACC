@@ -28,7 +28,7 @@ int main(int argc, char **argv)
   for (i = 1; i < N; i++)
   {
     for (j = 1; j < N; j++)
-#pragma omp task
+#pragma omp task depend(out:y)
       y[i][j] = y[i - 1][j] + y[i][j - 1];
   }
 
