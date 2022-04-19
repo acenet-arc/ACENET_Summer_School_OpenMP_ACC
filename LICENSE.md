@@ -9,7 +9,7 @@ This material is derived from a framework created by the Software Carpentry
 and Data Carpentry projects under the [Creative Commons Attribution
 license][cc-by-human].
 
-This [Digital Research Alliance of Canada](https://alliancecan.ca/) instructional material is
+This [ACENET](https://ace-net.ca/) instructional material is
 made available under the [Creative Commons Attribution
 license][cc-by-human]. The following is a human-readable summary of
 (and not a substitute for) the [full legal text of the CC BY 4.0
@@ -28,9 +28,12 @@ license terms.
 Under the following terms:
 
 * **Attribution**---You must give appropriate credit (mentioning that
-  your work is derived from work that is Copyright © Digital Research Alliance of Canada,
+  your work is derived from work that is 
+  Copyright © ACENET, 
+  Copyright © Compute Canada, 
+  Copyright © Digital Research Alliance of Canada,
   and Copyright © Software Carpentry and, where practical, 
-  linking to https://alliancecan.ca/ and, 
+  linking to https://ace-net.ca/, https://alliancecan.ca/ and, 
   http://software-carpentry.org/), provide a [link to the license][cc-by-human],
   and indicate if changes were made. You may do
   so in any reasonable manner, but not in any way that suggests the
@@ -39,8 +42,6 @@ Under the following terms:
 **No additional restrictions**---You may not apply legal terms or
 technological measures that legally restrict others from doing
 anything the license permits.  With the understanding that:
-
-Notices:
 
 * You do not have to comply with the license for elements of the
   material in the public domain or where your use is permitted by an
