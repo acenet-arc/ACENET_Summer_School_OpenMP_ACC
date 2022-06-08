@@ -90,61 +90,72 @@ int main()
 ~~~
 {:.language-c}
 
-- Turn the factor finding block into a task.
-- Generate a task for each trial factor.
-- Once a factor has been found, you should stop generating tasks.
+> ## Exercise
+> Make the following changes to the code:
+>
+> - Turn the factor finding block into a task.
+> - Generate a task for each trial factor.
+> - Once a factor is identified, stop generating tasks.
+> - Print the progress of tasks generation and execution separately.
+>
+>
+>Run the program in parallel and compare execution time with the serial version.    
+>
+>~~~
+>time srun ./a.out
+>time srun -c4 ./a.out
+>~~~
+>{:.language-bash}
+>
+>- How many tasks are in the pool? 
+>- How many tasks will be created if you submit a job with 100 and 1000 threads?
+>- Are all tasks generated right away?
+>
+>~~~
+>time srun -c4 --export OMP_NUM_THREADS=100 ./a.out
+>~~~
+>{:.language-bash}
+> > ## solution
+> > ~~~
+> > /* File find_factor_omp.c */
+> > #include <stdio.h>
+> > #include <stdlib.h>
+> > 
+> > int main()
+> > {
+> >   long N = 4993 * 5393;
+> >   long f;
+> > #pragma omp parallel
+> > #pragma omp single
+> >   for (f = 2; f <= N; f++) /* Loop generating tasks */
+> >   {
+> >     if (f % 200 == 0) /* Print progress */
+> >     {
+> >       fprintf(stdout, "%li tasks generated\n", f);
+> >       fflush(stdout);
+> >     }
+> > #pragma omp task
+> >     { /* Check if f is a factor */
+> >       if (f % 200 == 0) /* Print progress */
+> >         fprintf(stdout, "    %li tasks done\n", f);
+> >       if (N % f == 0)
+> >       { // The remainder is 0, found factor!
+> >         fprintf(stdout, "Factor: %li\n", f);
+> >         exit(0); /* Terminate the program */
+> >       }
+> >       else
+> >         for (int i = 1; i < 4e6; i++)
+> >           ; /* Burn some CPU cycles */
+> >     }
+> >   } 
+> > }
+> > ~~~
+> > {: .language-c}
+> >
+> >Not all tasks are generated right away. To prevent overloading of the system, the scheduler controls the size of the task pool. As soon as the list of deferred tasks gets too long, the implementation stops generating new tasks, and switches all threads in the team to executing already generated tasks. 
+> {: .solution}
+{: .challenge}
 
-~~~
-/* File find_factor_omp.c */
-#include <stdio.h>
-#include <stdlib.h>
-
-int main()
-{
-  long N = 4993 * 5393;
-  long f;
-#pragma omp parallel
-#pragma omp single
-  for (f = 2; f <= N; f++) /* Loop generating tasks */
-  {
-    if (f % 200 == 0) /* Print progress */
-    {
-      fprintf(stdout, "%li tasks generated\n", f);
-      fflush(stdout);
-    }
-#pragma omp task
-    { /* Check if f is a factor */
-      if (f % 200 == 0) /* Print progress */
-        fprintf(stdout, "    %li tasks done\n", f);
-      if (N % f == 0)
-      { // The remainder is 0, found factor!
-        fprintf(stdout, "Factor: %li\n", f);
-        exit(0); /* Terminate the program */
-      }
-      else
-        for (int i = 1; i < 4e6; i++)
-          ; /* Burn some CPU cycles */
-    }
-  } 
-}
-~~~
-{:.language-c}
-
-- Run the program in parallel and compare execution time with the serial version.  
-
-~~~
-time srun ./a.out
-time srun -c4 ./a.out
-~~~
-{:.language-bash}
-
--  How many tasks are in the pool? Not all tasks are generated right away. A scheduler controls the size of the task pool to prevent the overloading of the system. At some point, when the list of deferred tasks is too long, the implementation is allowed to stop generating new tasks, and switches every thread in the team on executing already generated tasks. 
-- Try submitting a job with more threads and look at how many tasks will be generated.
-
-~~~
-time srun -c4 --export OMP_NUM_THREADS=20 ./a.out
-~~~
-{:.language-bash}
 
 ### Task Synchronization
 Some applications require tasks to be executed in a certain order, but it is impossible to know when a task will be executed because a scheduler decides when and where to run a task. Several OpenMP directives are available for task synchronization. 
