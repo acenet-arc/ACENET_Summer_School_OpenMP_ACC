@@ -306,7 +306,9 @@ The depend clause enforces additional constraints on the scheduling of tasks or 
 {: .challenge}
 
 >## Computing Fibonacci Numbers
->The next example shows how  *task* and *taskwait* directives can be used to compute Fibonacci numbers recursively.
+>The next example shows how  *task* and *taskwait* directives can be used to compute Fibonacci numbers recursively. The Fibonacci Sequence is the series of numbers:
+>0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...
+>The next number is found by adding up the two numbers before it.
 >
 >- In the *parallel* construct, the *single* directive calls *fib(n)*.  
 >- The call to *fib(n)* generates two tasks. One of the tasks computes *fib(n-1)* and the other computes *fib(n-2)*. 
