@@ -113,40 +113,53 @@ tar -xf omp_code.tar
 ## A Very Quick Introduction to C  
 ### Preprocessor Directives
 The compilation begins with preprocessing. The preprocessor is a simple tool for performing text substitutions before the compilation process begins. Preprocessor commands always begin with a hash symbol (#).
+{: .instructor_notes :}
 
-- The `#include` directive instructs the preprocessor to insert the contents of another file into the source code.  
+- **The `#include` directive inserts the contents of a file.**  
+{: .self_study_text :}
+
+- **The `#include` directive instructs the preprocessor to insert the contents of another file into the source code.**  
+{: .instructor_notes :}
+
+~~~
+#include <header_file.h> 
+~~~
+{: .language-c}
+
 - Include directives are typically used to include files known as headers:
+- Header files are used to declare functions, variables, and macros.  
+{: .instructor_notes :}
 
-    ~~~
-    #include <header_file> // Search in a predefined folders
-    #include "header_file" // Search in the current directory
-    ~~~
-    {: .language-c}
+- **The `#define` directive declares constant values.**
+{: .self_study_text :}
 
-  - Header files are used to declare functions, variables, and macros.  
+- **The `#define` directive declares constant values that should be used throughout your code.** It is a convenient way to change certain parameters used throughout the code:
+{: .instructor_notes :}
 
-- The `#define` directive declares constant values that should be used throughout your code. It is a convenient way to change certain parameters used throughout the code, such as:
-  ~~~
-  # define SIZE 1000
-  ~~~
-  {: .language-c}
+~~~
+# define SIZE 1000
+~~~
+{: .language-c}
 
-- The *conditional group* `#ifdef`. Unlike #define directives which are always executed, `#ifdef` directives are only run when a certain condition is met. 
+- **The conditional group `#ifdef`.**
 
-  ~~~
-  #ifdef MACRO
-  controlled code
-  #endif /* MACRO */
-  ~~~
-  {: .language-c}
+~~~
+#ifdef MACRO
+controlled code
+#endif 
+~~~
+{: .language-c}
 
+- Unlike #define directives which are always executed, `#ifdef` directives are only run when a certain condition is met.
 - The block inside `#ifdef ... #endif` statements  is called a conditional group. Controlled code will be included in the preprocessor output if the macro (a block of statements) with the name MACRO is defined.
+{: .instructor_notes :}
   
 ### Basic Syntax
-- Curly braces `{ ...  }` are used to group statements into blocks. 
-- The semicolon operator `;` is used to separate statements
-- The comma operator `,` separates expressions (which have value)   
-- For Loop syntax:  
+- **`{ ...  }`**  Curly braces are used to group statements into blocks. 
+- **`;`** The semicolon operator is used to separate statements
+- **`,`** The comma operator separates expressions (which have value) 
+
+- **For Loop**  
   ~~~
   for ([initialization]; [condition test]; [increment or decrement])
   {
