@@ -1,5 +1,5 @@
 ---
-title: "Hello World"
+title: "A Parallel Hello World Program"
 teaching: 20
 exercises: 10
 questions:
@@ -9,30 +9,37 @@ questions:
 objectives:
 - Write, compile and run a multi-threaded program where each thread prints “hello world”.
 keypoints:
-- "Pragmas are directives to the compiler to parallelize something"
-- "Thread number is typically controlled with an environment variable, OMP_NUM_THREADS"
-- "Order of execution of parallel elements is not guaranteed."
-- "If the compiler doesn't recognize OpenMP pragmas, it will compile a single-threaded program.  But you may need to escape OpenMP function calls."
+- "OpenMP pragmas direct the compiler what to parallelize and how to parallelize it."
+- "By using the environment variable `OMP_NUM_THREADS`, it is possible to control how many threads are used."
+- "The order in which parallel elements are executed cannot be guaranteed."
+- "A compiler that isn't aware of OpenMP pragmas will compile a single-threaded program."
 ---
 
 ## Adding Parallelism to a Program
-Since OpenMP is an extension to the compiler, you need to be able to tell the compiler when and where to add the code necessary to create and use threads for the parallel sections. This is handled through special statements called pragmas. To a compiler that doesn't understand OpenMP, pragmas look like comments. The basic forms for C/C++ and Fortran are:
+OpenMP requires you to tell the compiler where to add the code necessary to create and use threads for the parallel sections.
+This is handled through special statements called pragmas. Pragmas look like comments to a compiler that does not understand OpenMP. OpenMP statements in C/C++ have the following syntax:
+{: .instructor_notes :}
+
+#### OpenMP core syntax
+{: .self_study_text :}
 ~~~
 #pragma omp < OpenMP directive >
 ~~~
 {: .language-c}
 
-~~~
-!$OMP < OpenMP directive >
-~~~
-{: .language-fortran}
 
-In C all OpenMP - specific directives start with *#pragma omp*.
+- All OpenMP directives begin with `#pragma omp`.
 
 ### How to add parallelism to the basic *hello_world* program?
-OpenMP is a library of functions and macros, so we need to include a header file *omp.h* with prototypes and macro definitions.
+Since OpenMP is a library, we must include a header file called `omp.h` that contains function prototypes and macro definitions.
+{: .instructor_notes :}
+We will start by looking at the `parallel` directive. This directive forks threads so the parallel block of code can be executed.
+{: .instructor_notes :}
 
-The very first directive that we will look at is the *omp parallel* directive. The *omp parallel* directive forks threads to carry out the work given in the parallel block of code.
+- Include OpenMP header
+- Use the `parallel` directive
+{: .self_study_text :}
+
 ~~~
 /* --- File: hello_world.c --- */
 #include <stdio.h>
@@ -47,55 +54,75 @@ int main(int argc, char **argv) {
 ~~~
 {: .language-c}
 
-To compile it, you'll need to add an extra flag to tell the compiler to treat the source code as an OpenMP program.
+#### How to compile an OpenMP program?
+You will need to add an extra flag `-fopenmp` to your compiler command to make it treat the source code as OpenMP code.
+{: .instructor_notes :}
+
+- Add the `-fopenmp` flag.
+{: .self_study_text :}
+
 ~~~
 gcc -fopenmp -o hello hello.c
 ~~~
 {: .language-bash}
 
-If you prefer Intel compilers to GCC, use:
+- If you are compiling with Intel compiler, add the `-qopenmp` flag
+
 ~~~
 icc -qopenmp -o hello hello.c
 ~~~
 {: .language-bash}
 
-When you run this program, you should see the output "Hello World" multiple
-times. But how many?
+#### Running an OpenMP program
+~~~
+./hello
+~~~
+{: .language-bash}
 
-The OpenMP standard says this is implementation dependent. But the usual default is that OpenMP will look at the machine it is running on and see how many cores there are. It will then launch a thread for each core.
+If you run this program, the output should say "Hello World" several times. Can you guess how many?
+{: .instructor_notes :}
 
-You can control the number of threads with environment variable OMP_NUM_THREADS. For example, if you want only 3 threads, do the following:
+Based on the OpenMP standard, this is determined by the implementation. OpenMP will normally look at the machine it is running on to determine how many cores are available. Then it will launch a thread for each core.
+{: .instructor_notes :}
+
+You can control the number of threads by setting the environment variable OMP_NUM_THREADS. To create only three threads, for example, you would do the following:
+{: .instructor_notes :}
+
+- Use the environment variable `OMP_NUM_THREADS` to control the number of threads.
+{: .self_study_text :}
+
 ~~~
 export OMP_NUM_THREADS=3
 ./hello
 ~~~
 {: .language-bash}
 
-## Execution steps of the parallel *hello_world* program
-- The *omp parallel* pragma directs compiler to make a code that will start a number of threads equal to what was passed to the program via the variable OMP_NUM_THREADS 
-- Each thread then executes the function *printf("Hello World\n")*
-- The threads rejoin the main thread when they return
-from the *printf* function, at which point they are terminated 
-- The main thread is then terminated itself
+### What happens when the parallel hello_world program runs?
+
+1. The `parallel` pragma instructs the compiler to create a code that starts a number of threads equal to what was passed into the program via the variable `OMP_NUM_THREADS`. 
+2. Each team thread then executes the function `printf("Hello World\n")`
+3. Threads rejoin the main thread when they return from the `printf()` function. At this point, team threads are terminated and only the main thread remains.
+4. After reaching the end of the program, the main thread terminates.
 
 > ## Using multiple cores
-> Try running the *hello_world* program with different numbers of threads.
-> - Can you use more threads than the cores on the machine?  
+> Try running the `hello` program with different thread counts.
+> - Is it possible to use more threads than the number of cores on the machine?
 >
-> You can use the *nproc* command to find out how many cores are on the machine.
+> You can use the `nproc` command to find out how many cores are on the machine.
 >
 >>## Solution
->> Threads are an OS abstraction and have no direct relationship to cores. You can launch as many threads as you want (the maximum number of threads can be limited by OS and/or OpenMP implementation), however the performance may degrade if you use more threads than physical cores.
+>> 
+Since threads are a programming abstraction, there is no direct relationship between them and cores. In theory, you can launch as many threads as you like however, if you use more threads than physical cores, performance may suffer. There is also a possibility that the OS and/or OpenMP implementation can limit the number of threads.
 > {: .solution} 
 {: .challenge}
 
 > ## OpenMP with SLURM
-> When you wish to submit an OpenMP job to the job scheduler SLURM, you can use the following boilerplate:
+> To submit an OpenMP job to the SLURM scheduler, you can use the following submission script:
 > ~~~
 > #!/bin/bash
-> #SBATCH --account=sponsor0
-> #SBATCH --time=0:01:0
+> #SBATCH --time=1:0:0
 > #SBATCH --cpus-per-task=3
+> #SBATCH --mem-per-cpu=1000
 > export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 > ./hello
 > ~~~
@@ -113,9 +140,9 @@ from the *printf* function, at which point they are terminated
 >[user45@node1 ~]$ 
 > ~~~
 > {: .output}
->  The most practical way to run our short parallel program on our test cluster is using *srun* command. Instead of submitting the job to the queue  *srun* will run the program from the interactive shell as soon as requested resources will become available. After the job is finished SLURM will release the allocated resources and exit. The *srun* command accepts the same keywords as *sbatch* and *salloc*.
+>  The most practical way to run our short parallel program on our test cluster is using `srun` command. Instead of submitting the job to the queue  `srun` will run the program from the interactive shell as soon as requested resources will become available. After the job is finished SLURM will release the allocated resources and exit. The `srun` command accepts the same keywords as `sbatch` and `salloc`.
 >
-> In SLURM environment operating system will see as many CPUs as you requested, so strictly there is no need to set OMP_NUM_THREADS variable to the value of the vriable SLURM_CPUS_PER_TASK.  
+> With SLURM environment, operating system will see as many CPUs as you have requested, so technically, OMP_NUM_THREADS variable inmost cases does not need to be set to the value of the variable `SLURM_CPUS_PER_TASK`. This may be needed, for example, when you run programs requesting both MPI tasks and cores on the same node.
 >
 > ~~~
 > srun --cpus-per-task=4 hello
@@ -130,15 +157,21 @@ from the *printf* function, at which point they are terminated
 >
 > If you have not yet done so, download and unpack the code:
 > ~~~
-> cd scratch
+> cd ~/scratch
+> mkdir workshop
+> cd workshop
 > wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/raw/gh-pages/code/omp_code.tar 
 > tar -xf omp_code.tar
 > ~~~
 > {: .language-bash}
 {: .callout}
 
-How can we tell which thread is doing what?   
-The OpenMP specification includes a number of functions that are made available through the included header file *omp.h*. One of them is the function *omp_get_thread_num*, used to get an ID of the thread running the code.
+#### How can we tell which thread is doing what?   
+The OpenMP specification includes a number of functions that are made available through the included header file `omp.h`. One of those functions is `omp_get_thread_num()` that returns the ID of the currently running thread.
+{: .instructor_notes :}
+
+- The function omp_get_thread_num() returns the thread ID of the currently running process.
+{: .self_study_text :}
 
 ~~~
 /* --- File hello_world_omp.c --- */
@@ -158,18 +191,12 @@ int main(int argc, char **argv) {
 ~~~
 {: .language-c}
 
-Here, you will get each thread tagging their output with their unique ID, a number between 0 and (number of threads - 1).
-
-> ## Pragmas and code blocks in FORTRAN
-> An OpenMP directive applies to the *code block* following it in C or C++. Code blocks are either a single line, or a series of lines wrapped by curly brackets.
->
-> Because Fortran doesn't have an analogous construction, many OpenMP directives in Fortran are paired with the matching "end" directive, such as `!$omp parallel end`.
-{: .callout}
+With this code, each thread's output will be tagged with its unique ID, a number between 0 and (number_of_threads - 1).
 
 > ## Thread ordering
-> Try running the program a few times.
-> - What order do the threads write out their messages in?
-> - What's going on?
+> Run the `hello` program several times.  
+> In what order do the threads write out their messages?  
+> What is happening here? 
 >
 > > ## Solution
 > > The messages are emitted in random order. This is an important rule of not only OpenMP programming, but parallel programming in general: parallel elements are scheduled to run by the operating system and order of their execution is not guaranteed.
@@ -177,11 +204,11 @@ Here, you will get each thread tagging their output with their unique ID, a numb
 {: .challenge}
 
 > ## Conditional Compilation
-> We said earlier that you should be able to use the same code for both OpenMP and serial work. Try compiling the code without the *-fopenmp* flag.
+> We said earlier that you should be able to use the same code for both OpenMP and serial work. Try compiling the code without the `-fopenmp` flag.
 > - What happens?
 > - Can you figure out how to fix it?
 >
-> Hint: If compiler is called with the OpenMP option it defines preprocessor macro \_OPENMP, so you can use the *#ifdef _OPENMP* preprocessor directive to tell compiler to process the line calling the *omp_get_thread_num* function only if this macro is defined.
+> Hint: When compiler is run with the `-fopenmp` option it defines preprocessor macro `_OPENMP`, so you may use the `#ifdef _OPENMP` preprocessor directive to tell compiler to only process the line containing `omp_get_thread_num()` function if the macro is defined.
 > > ## Solution
 > > ~~~
 > >
@@ -190,104 +217,16 @@ Here, you will get each thread tagging their output with their unique ID, a numb
 > > #include <omp.h>
 > >
 > > int main(int argc, char **argv) {
-> >    int id = 0;
-> >    #pragma omp parallel
-> >    {
-> > #ifdef _OPENMP
-> >    id = omp_get_thread_num();
-> > #endif
-> >    printf("Hello World from thread %d\n", id);
-> >    }
+> >   #pragma omp parallel
+> >   #ifdef _OPENMP
+> >   printf("Hello World %i\n", omp_get_thread_num());
+> >   #else
+> >   printf("Hello World \n");
+> >   #endif
 > > }
 > > ~~~
 > > {: .language-c}
 > {: .solution}
 {: .challenge}
 
-
-## Work-Sharing Constructs=
-A work-sharing construct divides the execution of the enclosed code region among the members of the thread team that encounter it.
-
-- Work-sharing constructs do not launch new threads
-- A program will wait for all threads to finish at the end of a work-sharing construct. This behavior is called an *implied barrier*.
-
-### The *omp for*
-- The *omp for* construct divides iterations of a loop across the team of threads.
-- Each thread executes the same instructions. This assumes a parallel region has already been initiated, otherwise it executes in serial on a single processor.
-- *omp for* represents a type of parallelism called *data parallelism*.
-
-~~~
-...
-#pragma omp parallel for
-    for (i=0; i < N; i++)
-        c[i] = a[i] + b[i];
-...
-~~~
-{: .language-c}
-
-> ## Using arrays in C
-> The easiest way to declare arrays as static: 
-> ~~~
->  A[2048][2048];
-> ~~~
->{: .language-c}
->Globally defined static arrays are allocated when a program starts, and they occupy memory until a program ends. If you declare large arrays as static, your program may crash with a *Segmentation fault* error. Static arrays are allocated on the stack, and the OS limits the size of the stack memory available to a user. 
->- You can check your stack memory limit using the command:
->~~~
->ulimit -s
->~~~
->{:.language-bash}
->- The *ulimit* command allows you to modify your stack memory limit:
->~~~
->ulimit -s unlimited
->~~~
->{:.language-bash}
-{: .callout}
-
-### The *omp sections*
-- The *omp sections* construct breaks work into separate, discrete sections.
-- It is is a non-iterative work-sharing construct.
-- It specifies that the enclosed sections of code are to be divided among the threads in the team. Independent *section* directives are nested within a *sections* directive. Each *section* contains different instructions and is executed once by a thread.
-- It is possible for a thread to execute more than one *section*.
-- Sections can be used to implement a *functional parallelism* (concurrent execution of different tasks).
-
-~~~
-#pragma omp parallel shared(a,b,c,d) private(i)
-  {
-#pragma omp sections nowait
-    {
-#pragma omp section
-    for (i=0; i < N; i++)
-      c[i] = a[i] + b[i];
-#pragma omp section
-    for (i=0; i < N; i++)
-      d[i] = a[i] * b[i];
-    }  /* end of sections */
-  }  /* end of parallel region */
-~~~
-{: .language-c}
-
-Here *nowait* clause means that the program will not wait at the end of the *sections* block for all threads to finish.
-
-> ## Exercise
-> Compile the file *sections.c* and run it on a different number of CPUs. 
-> Start with 1 CPU:
->~~~
-> srun -c1 ./a.out
->~~~
->{:.language-bash}
->
-This example has two sections and the program prints out which threads are doing them.
-> - What happens if the number of threads and the number of *sections* are different?
-> - More threads than *sections*?
-> - Less threads than sections?
->
-> > ## Solution
-> > If there are more threads than sections, only some threads will execute a section.  If there are more sections than threads, the implementation defines how the extra sections are executed.
-> {: .solution}
-{: .challenge}
-
-### The *omp single*
-- The *single* directive specifies that the enclosed code is to be executed by only one thread in the team.
-- May be useful when dealing with sections of code that are not thread safe (such as I/O).
 

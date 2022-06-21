@@ -66,10 +66,10 @@ Recollect that a thread is the smallest unit of computing that can be scheduled 
 
 
 - **Parallel OpenMP execution is based on a concept called fork-join:**
-  - An OpenMP program starts as a single thread, the master thread. 
-  - The master thread creates a team of parallel threads.
-  - Team threads execute statements in parallel.
-  - Team threads synchronize and terminate. 
+  1. An OpenMP program starts as a single thread, the master thread. 
+  2. The master thread creates a team of parallel threads.
+  3. Team threads execute statements in parallel.
+  4. Team threads synchronize and terminate. 
 {: .self_study_text :}
 
 
@@ -173,7 +173,6 @@ controlled code
   int i,c;
   for(i=10,c=1;i<100;i++) {
     c += 2*i; }
-  printf("c = %i\n", c);
   ~~~
    {: .language-c}
 
@@ -181,9 +180,8 @@ controlled code
 - Any statements in a for loop can be skipped, but semicolons must remain. For example, you can do initialization before loop:
   ~~~
   i=10, c=1;
-  for(;i<100; i++) {
+  for(; i<100; i++) {
     c += 2*i; }
-  printf("c = %i\n", c);
   ~~~
    {: .language-c}
 
@@ -198,47 +196,63 @@ controlled code
   ~~~
   {: .language-c}
 
-- Example:
-  ~~~
-  int max(int num1, int num2)
-    {
-        int result;
-        if (num1 > num2)
-          result = num1;
-        else
-          result = num2;
-        return result;
-    }
-  ~~~
+- Here is an example of a function that finds the maximum of two numbers:
+~~~
+int max(int num1, int num2) {
+    int result;
+    if (num1 > num2)
+      result = num1;
+    else
+      result = num2;
+    return result;
+}
+~~~
     {: .language-c}
 
 ### Pointers
 - Pointers are special variables used to store addresses of variables rather than values.
-- With the ```&``` operator, you can retrieve the variable's address. For example, you can use ```&A``` to get the address of the variable ```A``` in memory.
 
-- The statement:   
-~~~
-float * my_array;
-~~~
-   {:.language-c}
+- The **`&`** operator (reference) returns the variable's address: address of **A** is **`&A`**.
+{: .self_study_text :}
 
-  defines the variable ```my_array``` as a pointer to a location in memory that contains floating-point numbers
+- With the **`&`** operator, you can retrieve the variable's address. For example, you can use ```&A``` to get the address of the variable ```A``` in memory.
+{: .instructor_notes :}
 
-- The ```*``` operator returns the value of the object pointed by a pointer
+- The **`*`** symbol has two meanings
+  1. The **`*`** operator (dereference) allows you to access an object through a pointer. **`*X`**, for example, will give you the value of variable **`X`** if **`X`** is the memory address where it is stored.
+  2. In the statement **`float* my_array;`** the variable **`my_array;`**  is defined as a pointer to a location in memory containing floating-point numbers.
 
 Many C programming tasks such as array traversal or accessing complex data structures are more efficient when pointers are used. Other tasks, such as dynamic memory allocation, can only be accomplished by pointers. Learning pointers is vital if you wish to become a good C programmer.
+{: .instructor_notes :}
 
 ### Using Memory 
-- Static arrays are created at compile time by specifying their size in the source code, for example
-~~~
-int A[500];
-~~~
-    {: .language-c}
+Static arrays are created during a program's compilation by specifying their size in source code. They are available throughout the program.
+{: .instructor_notes :}
 
-- A dynamic memory allocation occurs when a program requests that the operating system give it a block of main memory.
-- The ```malloc( )``` is one of the functions used to allocate a block of memory dynamically.  
+- **Static arrays.**
+
+~~~
+int A[500]; 
+~~~
+{: .language-c}
+
+A dynamic memory allocation occurs when a program requests that the operating system give it a block of main memory. The `malloc( )` is one of the functions used to allocate a block of memory dynamically. Dynamic arrays provide random access to their elements and are resizable. Programs can initialize them with variable sizes and change their sizes later on. An array's memory can be released when it is no longer required. 
+{: .instructor_notes :}
+
+- **Dynamic arrays.**
+
+~~~
+int * A;  
+size = 500; // Define array size
+A = (int *)malloc(size*sizeof(int)); // Allocate memory
+A = (int *)realloc(A,1000);  // Increase size
+A[i]=10;  // Set array elements 
+free(A); // Free memory 
+~~~
+{: .language-c} 
 
 While declaring arrays as static is simple, using them has its disadvantages. Once we begin using arrays, we will discuss the drawbacks of static memory allocation in detail.
+{: .instructor_notes :}
 
 ### Compiling C Code
 The following is an example of a simple hello world program written in C.
@@ -252,7 +266,8 @@ int main(int argc, char **argv) {
 }
 ~~~
 {: .language-c}
-The command line arguments are passed to main subroutine in C by `argc` (argument count) and `**argv` (argument vector). If you don't intend to use command line arguments, you can omit them altogether: `int main()`. The return
+The command line arguments are passed to main subroutine in C by `argc` (argument count) and `**argv` (argument vector). If you don't intend to use command line arguments, you can omit them altogether: `int main()`.
+{: .instructor_notes :}
 
 In order to compile this code, you would need to use the following command:
 ~~~
@@ -269,13 +284,14 @@ This gives you an executable file *hello* that will print out the text "Hello Wo
 Hello World
 ~~~
 {: .output}
-- If you don't specify the output filename with the -o option compiler will use the default output name *a.out* (assembler output).
+- If you don't specify the output filename with the **`-o`** option compiler will use the default output name **a.out** (assembler output).
 
-> ## GCC on Compute Canada Systems
+> ## Using C compilers on Compute Canada Systems
 >
-> Currently the default environment on all general purpose clusters (Beluga, Cedar, Graham, Narval) is StdEnv/2020. The default compilers available in this environment on Graham and Beluga are Intel/2020.1.217 and gcc/9.3.0. 
+> - Currently the default environment on all general purpose clusters (Beluga, Cedar, Graham, Narval) is **`StdEnv/2020`**. 
+> - The default compilers available in this environment on Graham and Beluga are **`Intel/2020.1.217`** and **`gcc/9.3.0`**. 
+> - To load another compiler you can use the command **`module load`**. For example, the command to load **`gcc/10.3.0`** is: 
 >
-> To load another compiler you can use the command *module load*. For example, the command to load gcc version 10.3.0 is: 
 >~~~
 >module load gcc/10.3.0
 >~~~
