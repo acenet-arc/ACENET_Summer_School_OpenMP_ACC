@@ -4,20 +4,21 @@ teaching: 20
 exercises: 20
 questions:
 - "How do I parallelize a loop?"
+- "How do I ensure that the parallel code gives correct results?"
 objectives:
-- "Use the PARALLEL FOR pragma (or PARALLEL DO)"
-- "Use the PRIVATE clause"
+- "Learn to use the `parallel for` pragma"
+- "Learn to use the `private` clause"
 - "Be able to identify data dependencies"
 keypoints:
-- "The PARALLEL FOR (or PARALLEL DO) pragma makes a loop execute in parallel"
-- "A single variable accessed by different threads can cause wrong results"
-- "The PRIVATE clause makes a copy of a variable for each thread"
+- "With the `parallel for` pragma, a loop is executed in parallel"
+- "When a variable is accessed by different threads, incorrect results can be produced."
+- "Each thread receives a copy of the variable created by the `private` clause"
 ---
 
-One of the classic applications of programming is linear algebra, in all of its beauty and complexity. We will use a few simple problems to see how to execute loops in parallel using OpenMP.
+One of the classic applications of programming is linear algebra, in all of its beauty and complexity. We will explore a few simple linear algebra problems that benefit from being run in parallel using OpenMP.
 
 ## Multiplying an Array by a Constant
-The simplest problem is applying some function to an array of numbers. An example is multiplying each value by some constant number. In serial code you would loop over all array elements to do this multiplication:
+A simple problem involves applying some function to a collection of numbers.  Multiplying array by a constant number is an example. To do this multiplication in serial code, you would loop over all array elements:
 
 ~~~
 /*  -- File array_multiply.c --- */
@@ -28,24 +29,26 @@ The simplest problem is applying some function to an array of numbers. An exampl
 int main(int argc, char **argv)
 {
 	struct timespec ts_start, ts_end;
-	int size = 1e8;
+	float time_total;
+	int size = 2e8;
 	int multiplier = 2;
 	int *a, *c;
 	int i;
-	float time_total;
-
+	
 	/* Allocate memory for arrays */
 	a = malloc(size * sizeof(int));
 	c = malloc(size * sizeof(int));
+
+	/* Initialize the array */
+	for (i = 0; i < size; i++)
+		a[i] = 7;
 
 	/* Get start time */
 	clock_gettime(CLOCK_MONOTONIC, &ts_start);
 
 	/* Multiply array a by multiplier */
 	for (i = 0; i < size; i++)
-	{
 		c[i] = multiplier * a[i];
-	}
 
 	/* Get end time */
 	clock_gettime(CLOCK_MONOTONIC, &ts_end);
@@ -57,8 +60,8 @@ int main(int argc, char **argv)
 ~~~
 {: .language-c}
 
-- We added calls to *clock_gettime( )* function declared in the *time.h* header file to get the start and end times of the heavy work being done by the *for* loop. 
-- We used counts of how many seconds and how many nanoseconds elapsed, that are returned in the structures *ts_start* and *ts_end*. Then we did some math to convert the elapsed time to milliseconds.
+- We added calls to `clock_gettime( )` function declared in the `time.h` header file to get the start and end times of the heavy work being done by the `for` loop. 
+- We used counts of how many seconds and how many nanoseconds elapsed, that are returned in the structures `ts_start` and `ts_end`. Then we did some math to convert the elapsed time to milliseconds.
 
 ### Compiling and Running a Serial Version
 Compile the program. 
@@ -70,7 +73,8 @@ Run it on the cluster.
 ~~~
 srun --mem=2000 array_multiply
 ~~~
-{:.language-bash}
+{:.language-bash}  
+
 
 > ## Time and Size
 > Run the program several times and observe execution time. 
@@ -81,39 +85,41 @@ srun --mem=2000 array_multiply
 {: .challenge}
 
 ### Creating a Parallel Version 
-Let's parallelize this program using a *parallel* directive.  We need to make two changes:
-1. Include OpenMP header file *omp.h*.
-2. Tell compiler that we want to parallelize the main *for* loop.
+Let's parallelize this program using a `parallel` directive.  We need to make two changes:
+1. Include OpenMP header file `omp.h`.
+2. Tell compiler that we want to parallelize the main `for` loop.
 
 ~~~
 /*  -- File array_multiply_omp.c --- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <omp.h> /* <--- OpenMP header --- */
+#include <omp.h>
 
 int main(int argc, char **argv)
 {
 	struct timespec ts_start, ts_end;
-	int size = 1e8;
+	float time_total;
+	int size = 2e8;
 	int multiplier = 2;
 	int *a, *c;
 	int i;
-	float time_total;
-
+	
 	/* Allocate memory for arrays */
 	a = malloc(size * sizeof(int));
 	c = malloc(size * sizeof(int));
 
+	/* Initialize the array */
+	for (i = 0; i < size; i++)
+		a[i] = 7;
+
 	/* Get start time */
 	clock_gettime(CLOCK_MONOTONIC, &ts_start);
 
-/* Multiply array a by multiplier */
-#pragma omp parallel for /* <--- OpenMP parallel for loop --- */
+	/* Multiply array a by multiplier */
+	#pragma omp parallel for /* <--- OpenMP parallel for loop --- */
 	for (i = 0; i < size; i++)
-	{
 		c[i] = multiplier * a[i];
-	}
 
 	/* Get end time */
 	clock_gettime(CLOCK_MONOTONIC, &ts_end);
@@ -142,15 +148,14 @@ srun -c4 --mem-per-cpu=1000 array_multiply_omp
 > - What happens to the runtime when you change the number of threads?
 {: .challenge}
 
-In this example, the number of iterations around the *for* loop gets divided across the number of available threads. In order to do this, OpenMP needs to know how many iterations there are in the *for* loop. This leads to another requirement: the number of iterations can not change part way through the loop. For the same reasons *while* loops can not be parallelized.
+In this example, the number of loop iterations is divided over the number of available threads. OpenMP must know how many iterations are in the loop before it can do this. This leads to another requirement: the number of iterations must not change midway through the loop. For the same reasons `while` loops can not be parallelized.
 
-To ensure the parallel *for* loop works correctly
-- you must not change the value of *size* within one of the iterations.
-- you must not use a call to `break()` or `exit()` within the *for* loop, either. These functions pop you out of the *for* loop before it is done.
+To ensure the parallel `for` loop works correctly
+- you must not change the number of loop iterations (the variable `size` in the example above) within one of the iterations.
+- you must not use a call to `break()` or `exit()` within the `for` loop, either. These functions pull you out of the `for` loop before it is done.
 
 ## Summing the Values in a Matrix
-Now let's try adding up the elements of a matrix.
-Moving up to two dimensions adds a new layer of looping. The basic code looks like the following.
+Now let's try adding up the elements of a matrix. Adding a second array dimension creates another layer of looping. Let's take a look at the basic code:
 ~~~
 /* --- File matrix_sum_omp.c --- */
 #include <stdio.h>
@@ -168,9 +173,9 @@ int main(int argc, char **argv)
 
 	/* Allocate memory */
 	c = malloc(size * sizeof(int));
-	a = (int **)malloc(size * sizeof(int *));
+	a = (int **)malloc(size * sizeof(int *)); // allocate an array of pointers to columns
 	for (i = 0; i < size; i++)
-		a[i] = malloc(size * sizeof(int));
+		a[i] = malloc(size * sizeof(int)); // allocate memory for every row.
 
 	/* Set all matrix elements to 1 */
 	for (i = 0; i < size; i++)
@@ -181,7 +186,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Zero the accumulator */
+	/* Zero the accumulator array. It will be used to store column sums */
 	for (i = 0; i < size; i++)
 	{
 		c[i] = 0;
@@ -222,7 +227,7 @@ int main(int argc, char **argv)
 > > ## Solution
 > > 1. The elements all have value 1, and there are 1e4*1e4 of them, so the total should be 1e8. Why isn't it?
 > > 2. OpenMP threads share memory. This means that every thread
-> > can see and access all of memory for the process. In this case, multiple threads are all accessing the loop variable *j*. Threads that started last will reset *j* and as a result threads that started before will count elements more than once.
+> > can see and access all of memory for the process. In this case, multiple threads are all accessing the loop variable *j*. Threads that started last will reset *j* and as a result threads that started before will count some elements more than once.
 >>
 > {: .solution}
 {: .challenge}
@@ -242,9 +247,9 @@ When a variable is declared private, OpenMP replicates this variable and assigns
 - variables declared outside of a parallel region are implicitly shared 
 - variables declared inside are implicitly private.
 
-Thus another way to fix this problem is to define *j* inside the parallel *for* loop. That's perfectly valid, but it will require changing code. One of the goals of OpenMP is to allow parallelization by only adding pragma statements that can be enabled or disabled at compile time.
+Thus another way to fix this problem is to define *j* inside the parallel `for` loop. That's perfectly valid, but it will require changing code. One of the goals of OpenMP is to allow parallelization by only adding pragma statements that can be enabled or disabled at compile time.
 
-### Be Careful with Data Dependencies
+### Be Cautious About Data Dependencies
 In turning a serial program into a parallel program, it's vital to maintain the correctness of the serial program. Data dependency is an important concept we use to guarantee that we're transforming a serial program into an equivalent (in terms of its output) parallel program.
 
 What is data dependency? If two statements read or write the same memory location, and at least one of the statements writes that memory location, then there is a *data dependency* on that memory location between the two statements. Loops with data dependencies can not be executed in parallel because the results may not be correct.
@@ -254,12 +259,12 @@ _If there is a data dependency between two statements, then the order in which t
 Consider this loop that computes a cumulative sum:
 ~~~
 for ( i = 1; i < N - 1; i = i + 1 ) {
-    a[i] = a[i] + a[i+1];
+    a[i] = a[i] + a[i-1];
 }
 ~~~
 {: .language-c}
 
-If we run to run this loop in parallel different iterations would be carried out by different threads of execution. If any two iterations didn't happen in the order dictated by the serial code, as shown in the figure below, the results would be wrong.
+If we run this loop in parallel different iterations would be carried out by different threads of execution. If any two iterations didn't happen in the order dictated by the serial code, as shown in the figure below, the results would be wrong.
 
 ![](../fig/Data_Dep.svg)
 
@@ -300,7 +305,7 @@ Since either of the two statements can read or write a variable, there are four 
 > >
 > > Loop #1 does not. The increment of this loop is 2, so in the step 2 we compute a[2]=a[2]+a[1]. In the next step we compute a[4]=a[4]+a[3] ... etc.  
 > > Loop #2 does not. In this range of *i* values each thread modifies only one element of the array *a*.  
-> > Loop #3 does. Here the last iteration creates data dependency writing to a[N/2]:
+> > Loop #3 does. Here the last iteration creates data dependency writing to a[N/2] because a[N/2] is used when i=0:
 > >~~~
 > >i=N/2; a[N/2] = a[N/2] + a[N]  
 > >i=0;   a[0] = a[0] + a[N/2]
@@ -312,10 +317,10 @@ Since either of the two statements can read or write a variable, there are four 
 > {: .solution}
 {: .challenge}
 
-Not everything can be parallelized. If there is data dependency you may need to modify your algorithm to be more parallel-friendly. Spend some time (drawing diagrams may help) to see what happens when two (or more) threads work simultaneously on a loop. It's not pretty. One of the strategies for solving some data dependency problems may be to write into a new copy of an array and at the end of each iteration update old from new. 
+Parallelization isn't always possible. If your algorithm has data dependency, you may have to modify it to make it more parallel-friendly.Think about what happens when two (or more) threads work on the same loop at the same time (drawing diagrams may help). It is sometimes difficult to understand how multiple threads behave. In order to solve some data dependency issues, one method is to write into a new copy of an array and update old from new at the end of each iteration when all threads have completed.
 
 ### Thread-safe Functions
-Another important concept is that of a *thread-safe* function.  
+Using *thread-safe* functions is also an important concept. 
 
 Consider this code;
 
@@ -327,11 +332,11 @@ for(i = 0, i < N, i++)
 {:.language-c}
 
 Will this give the same results as the serial version?  
-Maybe ... It depends on what function does. If the result does not depend on the order threads use different values of *i*, then the function is thread safe.
+Maybe ... It depends on what function does. If the result does not depend on the other threads using different values of *i* at the same time, then the function is thread safe. In other words if function works correctly when it is executed with multiple threads it is thread safe.
 
 *A thread-safe function is one which can be called simultaneously by multiple threads of execution.*
 
-Consider the function computing distance between two points in 2D:
+Let us consider the function for computing the distance between two points in 2D:
 ~~~
 float funct(float *p1, float *p2)
 {
@@ -343,9 +348,9 @@ float funct(float *p1, float *p2)
 ~~~
 {:.language-c}
 
-Execution of this function for different values of p1 and p2 is completely independent. Note that each call creates a new local values dx and dy on the call stack, so they are private to the thread executing the function. This function is thread safe.
+Execution of this function for different values of p1 and p2 is completely independent. Whenever a new function call is made, new local values dx and dy are created on the stack, so they are private to the thread. This function is thread safe.
 
-Consider a modified version of the code where dx and dy are defined outside of the function:
+Imagine a modified version of the code where dx and dy are defined externally to the function:
 
 ~~~
 float dx, dy;
@@ -358,9 +363,9 @@ float funct(float *p1, float *p2)
 ~~~
 {:.language-c}
 
-The variables dx and dy may be modified by another thread after they are computed and before they are used. This function is not thread-safe.
+In this case, after dx and dy have been computed, another thread may modify them before they are used. This function is not thread-safe.
 
-You need to be aware when writing multi-threaded programs whether functions you are using are thread safe or not. For example random number generator rand( ) is not thread safe. For threaded applications thread safe version of random number generator rand_r( ) is available. 
+When writing multi-threaded programs, you should be aware of whether functions you use are thread safe or not. For example random number generator rand( ) is not thread safe. For threaded applications thread safe version of random number generator rand_r( ) is available. 
 
 For more, see [Thread safety](https://en.wikipedia.org/wiki/Thread_safety).
 
@@ -403,16 +408,15 @@ Total is 100000000, time is 521.661536 ms
 {:.output}
 
 
-What is going on?   
-Modern compilers should be smart enough to figure out how to maximize the performance, right? 
+What is going on? A modern compiler should be smart enough to maximize the performance, right?
 
-Modern CPUs are fast, and main memory access is relatively slow. This can be a huge processing bottleneck because CPU will idle for many cycles waiting for the data. As a compromise, CPU manufacturers add some fast memory on the CPU chip. This memory is called CPU cache. Cache organization is fairly complex, with several cache levels differing in the access time.
+While modern CPUs are fast, main memory access is relatively slow. This can lead to a major bottleneck in processing, as the CPU will remain idle while waiting for the data. As a compromise, CPU manufacturers add some fast memory on the CPU chip. This memory is called CPU cache. Cache organization is fairly complex, with several cache levels differing in the access time.
 
-When we want to loop through an array, the first access would go to memory to fetch data, and this is a very slow operation. To deal with this bottleneck upon the first access to the array instead of grabbing just one element CPU grabs a large chunk of data and puts it into the cache. The next time the CPU needs some data it first looks in the cache. 
+When we want to loop through an array, the first access would go to main memory to fetch data, and this is a very slow operation. To deal with this bottleneck upon the first access to the array instead of grabbing just one element CPU grabs a large chunk of data and puts it into the cache. The next time the CPU needs some data it first looks in the cache. 
 
-if we organize our computations such that once a chunk of data is fetched into the cache all that data is used in the computation before a different line is fetched, our program will run a lot faster than if CPU will keep fetching  data from different parts of memory. This is called data locality.
+If we organize our computations so that once our program fetches a chunk of data into the cache, all of that data is used prior to the next chunk being fetched, we will be able to run our program much faster than if the CPU was continually fetching data from different parts of memory. This is called data locality.
 
-Taking advantage from cache is possible only if an array we are looping through is stored sequentially as contiguous memory block. 
+In order to take advantage of CPU cache, an array we are looping through must be stored sequentially as a contiguous memory block.
 
 C/C++ compiler stores static matrices in row-major order. Although we did not use static array, we stored our matrix in the same way. So if our inner loop iterates through elements of a row as shown in the diagram below, then a chunk of a row  will be loaded into cache upon the first access. 
 
@@ -435,7 +439,7 @@ This will not happen if in out inner loop we iterate through elements of a colum
 In this case, CPU will need to access main memory to load each matrix element.
 
 #### Avoiding Parallel Overhead at Low Iteration Counts
-Creating a thread is expensive, it may cost thousands of CPU cycles. f you have a function that requires only hundreds of cycles, it is wasteful to parallelize it. The overhead alone will set you back. This can be avoided using conditional parallelization:
+Creating a thread is expensive, it may cost thousands of CPU cycles. If you have a function that requires only hundreds of cycles, it is wasteful to parallelize it. The overhead alone will set you back. This can be avoided using conditional parallelization:
 
 ~~~
 #pragma omp parallel for if(N > 1000) 
