@@ -131,3 +131,17 @@ This example has two sections and the program prints out which threads are doing
 > {: .solution}
 {: .challenge}
 
+> ## What will the following code do?
+>
+>~~~
+>omp_set_num_threads(8);
+>#pragma omp parallel
+>for(i=0; i < N; i++){C[i] = A[i] + B[i];}
+>~~~
+>{: .language-c}
+>
+>Answers:
+>1. One thread will execute each iteration sequentially
+>2. 8 threads will distribute iteration space approximately N/8 per thread
+>3. Each of 8 threads will execute each iteration sequentially overwriting values of C.
+{: .challenge}

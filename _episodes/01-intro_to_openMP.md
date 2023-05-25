@@ -45,7 +45,7 @@ OpenMP is supported by all commonly used compilers, such as gcc, clang, Intel, N
 For an overview of the past, present and future of the OpenMP read the paper ["The Ongoing Evolution of OpenMP"](https://ieeexplore.ieee.org/document/8434208).
 
 ### OpenMP Execution Model
-OpenMP gives programmers full control over parallelization. Unlike automatic parallelization, it requires explicit programing. Among the guiding principles of OpenMP is that performance should not come at the expense of ease of coding and maintenance. 
+OpenMP gives programmers full control over parallelization. Unlike automatic parallelization, it requires explicit programming. Among the guiding principles of OpenMP is that performance should not come at the expense of ease of coding and maintenance. 
 {: .instructor_notes}
 
 How does OpenMP assist programmers in using multiple CPU cores efficiently?
@@ -59,11 +59,10 @@ Recollect that a thread is the smallest unit of computing that can be scheduled 
 **Parallel OpenMP execution is based on a concept called fork-join:**
 {: .instructor_notes}
 - An OpenMP program starts as a single thread, the master thread. This thread executes sequentially. 
-- The master thread creates a team of parallel threads when it encounters the first parallel region. This process is called forking.
-- Different team threads execute the statements in the parallel region of the program at the same time.
+- The master thread creates a team of parallel threads when it encounters the first parallel region, and the system divides a task among them. This process is called forking.
+- Different team threads execute the statements in the parallel region of the program at the same time. The runtime environment allocates threads to different processors (or cores).
 - After the team threads have finished the statements in the parallel region, they synchronize and terminate, leaving only the master thread. 
 {: .instructor_notes}
-
 
 - **Parallel OpenMP execution is based on a concept called fork-join:**
   1. An OpenMP program starts as a single thread, the master thread. 

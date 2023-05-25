@@ -17,7 +17,9 @@ keypoints:
 
 ## Adding Parallelism to a Program
 OpenMP requires you to tell the compiler where to add the code necessary to create and use threads for the parallel sections.
-This is handled through special statements called pragmas. Pragmas look like comments to a compiler that does not understand OpenMP. OpenMP statements in C/C++ have the following syntax:
+
+This is handled through special compiler directive called pragmas. The word pragma is short for pragmatic information. A pragma is a way to communicate information to the compiler. The information is nonessential in the sense that the compiler may ignore the information and still produce a correct object program. However, the information provided by the pragma can help the compiler to optimize the program.
+So OpenMP pragmas look like comments to a compiler that does not understand OpenMP. OpenMP statements in C/C++ have the following syntax:
 {: .instructor_notes}
 
 #### OpenMP core syntax

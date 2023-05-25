@@ -371,3 +371,20 @@ The depend clause enforces additional constraints on the scheduling of tasks or 
 > There are a few gotchas to be aware of. While the intention is that tasks will run in parallel, there is nothing in the specification that guarantees this behavior. You may need to check how your particular environment works.
 {: .callout}
 
+### Review
+
+|OpenMP pragma, function, or clause|Concepts |
+| :---      |    :----   | 
+| #pragma omp parallel | Parallel region, teams of threads, structured block, interleaved execution across threads |
+| int omp_get_thread_num() <br> int omp_get_num_threads() | Create threads with a parallel region and split up the work using the number of threads and thread ID|
+|double omp_get_wtime()|Speedup and Amdahl's law.<br>False Sharing and other performance issues|
+|setenv OMP_NUM_THREADS N|Internal control variables. Setting the default number of threads with an environment variable
+|#pragma omp barrier<br> #pragma omp critical|Synchronization and race conditions. Revisit interleaved execution.|
+|#pragma omp for <br>#pragma omp parallel for|Worksharing, parallel loops, loop carried dependencies|
+|reduction(op:list)|Reductions of values across a team of threads|
+|schedule(dynamic [,chunk])<br>schedule (static [,chunk])|Loop schedules, loop overheads and load balance|
+|private(list)<br> firstprivate(list)<br> shared(list)|Data environment|
+|nowait|Disabling implied barriers on workshare constructs, the high cost of barriers. The flush concept (but not the concept)|
+|#pragma omp single|Workshare with a single thread|
+|#pragma omp task<br>#pragma omp taskwait|Tasks including the data environment for tasks.|
+
