@@ -70,7 +70,7 @@ int main()
 }
 ~~~
 {:.language-c}
-[device_count.c]()
+[device_count.c](https://github.com/ssvassiliev/ACENET_Summer_School_OpenMP_2023/raw/gh-pages/code/device_count.c)
 </div>
 
 Compile with gcc/11.3.0: 
@@ -106,19 +106,284 @@ After execution, computed data needs to be moved back from device to host memory
 Keep an eye on GPU specs. Since GPU memory is typically smaller than main memory, make sure that all kernel-related data fits there.
 {: .instructor_notes}
 
+### Example: compute sum of two vectors. 
+Start from the serial code `vadd_gpu_template.c`. The program generates two random vectors A and B, and computes their sum C.  In addition, it prints the sum of all elements of the resulting vector C for verification. The sum of these two vectors should be close to 1, since they are both initialized by random numbers between 0 and 1.
+
+<div class="gitfile" markdown="1">
+
+~~~
+/* Compute sum of vectors A and B */
+#include <stdio.h>
+#include <stdlib.h>
+#include <omp.h>
+
+int main(int argc, char *argv[])
+{
+    double start, end;
+    int size = 1e8;
+    float *A;
+    float *B;
+    float *C;
+    double sum = 0.0f;
+
+    int ncycles=atoi(argv[1]);
+    A = (float *)malloc(size * sizeof(float *));
+    B = (float *)malloc(size * sizeof(float *));
+    C = (float *)malloc(size * sizeof(float *));
+
+    /* Initialize vectors */
+    for (int i = 0; i < size; i++)
+    {
+        A[i] = (float)rand() / RAND_MAX;
+        B[i] = (float)rand() / RAND_MAX;
+    }
+
+    start = omp_get_wtime();
+    for (int k = 0; k < ncycles; k++)
+        for (int i = 0; i < size; i++)
+        {
+            C[i] = A[i] + B[i];
+            sum += C[i];
+        }
+    end = omp_get_wtime();
+
+    printf("Time: %f seconds\n", end - start);
+    sum = sum / size;
+    printf("Sum = %f\n ", sum / ncycles);
+}
+~~~
+{:.language-c}
+[vadd_gpu_template.c](https://github.com/ssvassiliev/ACENET_Summer_School_OpenMP_2023/raw/gh-pages/code/vadd_gpu_template.c)
+</div>
+
+~~~
+gcc vadd_gpu_template.c -fopenmp -O3 -ovadd_serial 
+~~~
+{:.language-bash}
+
+In order to get an accurate timing on GPUs, we must run summation multiple times. The number of repeats can be specified on the command line:
+
+~~~
+srun --gpus-per-node 1 --mem=5000 -c4 ./vadd_serial 10
+~~~
+{:.language-bash}
+
+Execution time of the serial code is around 1.6 sec.
+
 ### How to Offload: the OpenMP Target Directive
 
 - OpenMP offload constructs were introduced in OpenMP 4.0.
 
-The omp target directive instructs the compiler to generate a target task, that is, to map variables to a device data environment and to execute the enclosed block of code on that device.
+OMP target instructs the compiler to generate a target task, which executes the enclosed code on the target device.
+
+Make a copy of the code:
+~~~
+cp vadd_gpu_template.c vadd_gpu.c
+~~~
+{:.language-bash}
+
+Identify code block we want to offload to GPU and generate a target task:  
+~~~
+...
+#pragma omp target
+    {
+        for (int i = 0; i < size; i++)
+        {
+            C[i] = A[i] + B[i];
+            sum += C[i];
+        }
+    }
+~~~
+{:.language-c}
+
+Compile and run on a GPU node:
+~~~
+gcc vadd_gpu.c -fopenmp -O3 -ovadd_gpu 
+srun --gpus-per-node 1 --mem=5000 -c4 ./vadd_gpu 10
+~~~
+{:.language-bash}
+
+~~~
+libgomp: cuCtxSynchronize error: an illegal memory access was encountered
+~~~
+{:.output}
+
+The compiler created target task and offloaded it to a GPU, but the data is on the host!
+
+### The OpenMP Map directive.
+
+#### map(map-type: list[0:N])
+– **map-type** may be **to**, **from**, **tofrom**, or **alloc**. The clause defines how the variables in list are moved between the host and the device.
+
+~~~
+...
+#pragma omp target map(to: A[0:size],B[0:size]) map(from: C[0:size], sum)
+~~~
+{:.language-c}
+
+Compile and run on a GPU node:
+~~~
+gcc vadd_gpu.c -fopenmp -O3 -ovadd_gpu 
+srun --gpus-per-node 1 --mem=5000 -c4 ./vadd_gpu 1
+~~~
+{:.language-bash}
+
+Execution time of the offloaded code is slower, around 8 sec. It is expected because:
+
+1. By using the `omp target` directive, a target task is created, offloaded to the GPU, but is not parallelized. It executes on a single thread.
+2. The processors on GPUs are slower than the CPUs.
+3. It takes some time for data to be transferred from the host to the device. 
+
+![](../fig/target.svg)
+
+### The OpenMP Teams directive.
+Using the teams construct is the first step to utilizing multiple threads on a device. A teams construct creates a league of teams. Each team consists of some number of threads, when the directive `teams` is encountered the master thread of each team executes the code in the teams region.
+
+~~~
+...
+#pragma omp target teams map(to: A[0:size],B[0:size]) map(from: C[0:size], sum)
+~~~
+{:.language-c}
 
 
+Compile and run on a GPU node:
+~~~
+gcc vadd_gpu.c -fopenmp -O3 -ovadd_gpu 
+srun --gpus-per-node 1 --mem=5000 -c4 ./vadd_gpu 1
+~~~
+{:.language-bash}
+
+Execution time is the same! 
+
+Now we have multiple threads executing on the device, however they are all performing the same work.
+
+![](../fig/teams.svg)
+
+It is also important to note that only the master thread for each team is active.
+
+### Review
+
+Right now we have:
+- Multiple thread teams working on a device
+- All thread teams are performing the same work
+- Only the master thread of each team is executing 
+
+### The OpenMP Distribute directive.
+
+The distribute construct can be used to spread iterations of a loop among teams.
+
+![](../fig/teams_distribute.svg)
+
+~~~
+...
+#pragma omp target teams distribute map(to: A[0:size],B[0:size]) map(from: C[0:size], sum)
+~~~
+{:.language-c}
+
+
+Compile and run on a GPU node:
+~~~
+gcc vadd_gpu.c -fopenmp -O3 -ovadd_gpu 
+srun --gpus-per-node 1 --mem=5000 -c4 ./vadd_gpu 1
+~~~
+{:.language-bash}
+
+Execution time is faster, about 1 sec, but how it compares with the CPU version?
+
+~~~
+gcc vadd_gpu.c -fopenmp -O3 -ovadd_gpu 
+srun --gpus-per-node 1 --mem=5000 -c4 ./vadd_serial 1
+~~~
+{:.language-bash}
+
+This is disappointing, serial version running on a single CPU is 5 times faster!
+
+The master thread is the only one we have used so far out of all the threads available in a team!
+
+At this point, we have teams performing independent iterations of this loop, however each team is only executing serially.
+
+In order to work in parallel within a team we can use threads as we normally would with the basic OpenMP usage.
+
+Composite constructs can help. The `distribute parallel for` construct specifies a loop that can be executed in parallel by multiple threads that are members of multiple teams.
+
+~~~
+...
+#pragma omp target teams distribute parallel for map(to: A[0:size],B[0:size]) map(from: C[0:size], sum)
+~~~
+{:.language-c}
+
+
+Compile and run on a GPU node:
+~~~
+gcc vadd_gpu.c -fopenmp -O3 -ovadd_gpu 
+srun --gpus-per-node 1 --mem=5000 -c4 ./vadd_gpu 1
+~~~
+{:.language-bash}
+
+![](../fig/target_full_parallel.svg)
+
+Now, we have teams splitting the work into large chunks on the device, while threads within the team will further split the work into smaller chunks and execute in parallel.
+
+But we have two problems:
+
+1. It did not take less time to execute.
+2. The sum is not calculated correctly.
+
+Maybe the work is not large enough for the GPU? To increase the amount of calculations, we could repeat the loop multiple times. Try running 20 cycles of addition. Did the execution time increase 20 times?
+It took only 7 seconds instead of the expected 20 seconds. We are on the right track, but what else can be improved in our code to make it more efficient?
+
+### The OpenMP Target Data directive.
+Each time we iterate, we transfer data from the host to the device, and we pay a high cost for data transfer. Arrays A and B can only be transferred once at the beginning of calculations, and the results can only be returned to the host once the calculations are complete. The `target data` directive can help with this.
+
+This directive maps variables to a device data environment for the extent of the region.
+
+~~~
+...
+#pragma omp target data map(to: A[0:size], B[0:size]) map(from: C[0:size], sum)
+{
+    for (int k = 0; k < ncycles; k++)
+#pragma omp target teams distribute parallel for reduction(+:sum)
+        for (int i = 0; i < size; i++)
+        {
+            C[i] = A[i] + B[i];
+            sum += C[i];
+        }
+ }
+~~~
+{:.language-c}
+
+Compile and run on a GPU node for 20 cycles:
+~~~
+gcc vadd_gpu.c -fopenmp -O3 -ovadd_gpu 
+srun --gpus-per-node 1 --mem=5000 -c4 ./vadd_gpu 20
+~~~
+{:.language-bash}
+
+The time decreased from 7 to 1 sec! 
+Try running for 200 cycles. Did the time increase proportionally to the work?
+
+Let's take care of issue with sum. We get the wrong result with sum, it is zero, so it looks like it is not transferred back from the device.
+
+~~~
+...
+#pragma omp target data map(to: A[0:size], B[0:size]) map(from: C[0:size])
+{
+    for (int k = 0; k < ncycles; k++)
+#pragma omp target teams distribute parallel for reduction(+:sum) map(tofrom:sum)
+        for (int i = 0; i < size; i++)
+        {
+            C[i] = A[i] + B[i];
+            sum += C[i];
+        }
+ }
+~~~
+
+We need to add a reduction clause and map sum tofrom the device since we parallelized the for loop.
 
 ## Getting info about available GPUs
-
 ### Nvidia-smi
 ~~~
-srun --gpus-per-node=1 --mem=1000 nvidia-smi
+nvidia-smi --query-gpu=timestamp,utilization.gpu,utilization.memory -format=csv -l 1 >& gpu.log&
 ~~~
 {:.language-bash}
 
@@ -133,7 +398,10 @@ gcc get_device_info.c -fopenmp -ogpuinfo
 {:.language-bash}
 
 ml nvhpc
+nvc vadd_gpu.c -O3 -fopenmp -mp=gpu -Minfo=mp 
+nvc vadd_gpu.c -O3 -fopenmp -mp=multicore -Minfo=mp 
 
+gcc vadd_gpu.c -fopenmp -O3 -fopt-info-vec-optimized
 
 #### Compiling openMP program for execution on GPUs.
 -mp=gpu: 
