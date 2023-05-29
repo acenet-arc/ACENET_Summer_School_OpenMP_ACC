@@ -11,8 +11,14 @@ int main(int argc, char *argv[])
     float *B;
     float *C;
     double sum = 0.0f;
+    int ncycles=1;
 
-    int ncycles=atoi(argv[1]);
+    if( argc == 2 )
+    	ncycles=atoi(argv[1]);
+    else
+    	printf("Usage: vadd number_of_cycles\n");
+    
+
     A = (float *)malloc(size * sizeof(float *));
     B = (float *)malloc(size * sizeof(float *));
     C = (float *)malloc(size * sizeof(float *));
@@ -33,7 +39,7 @@ int main(int argc, char *argv[])
         }
     end = omp_get_wtime();
 
-    printf("Time: %f seconds\n", end - start);
+    printf("\nNum cycles: %i Time: %f seconds\n", ncycles, end - start);
     sum = sum / size;
     printf("Sum = %f\n ", sum / ncycles);
 }
