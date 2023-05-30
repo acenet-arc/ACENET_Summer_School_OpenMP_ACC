@@ -107,16 +107,16 @@ init_instructor_mode_from_cookie()
 
 
 // Toogle between self_study_text and instructor_notes
-$(".toggle_instructor_view").click(function(event) {
-    if ($('.toggle_instructor_view > label > input').is(":checked")) {
-        $(".self_study_text").hide();
-        $(".instructor_notes").show();
-        setCookie("instructor_view_state", "on", cookie_lifetime);
-    } else {
-        $(".self_study_text").show();
-        $(".instructor_notes").hide();
-        setCookie("instructor_view_state", "off", cookie_lifetime);
-    }
+//$(".toggle_instructor_view").click(function(event) {
+//    if ($('.toggle_instructor_view > label > input').is(":checked")) {
+//        $(".self_study_text").hide();
+//        $(".instructor_notes").show();
+//        setCookie("instructor_view_state", "on", cookie_lifetime);
+//    } else {
+//        $(".self_study_text").show();
+//        $(".instructor_notes").hide();
+//        setCookie("instructor_view_state", "off", cookie_lifetime);
+//    }
 // Hide permanently
 $(".self_study_text").show();
 $(".instructor_notes").hide();
