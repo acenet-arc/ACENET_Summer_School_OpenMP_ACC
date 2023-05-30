@@ -118,8 +118,8 @@ $(".toggle_instructor_view").click(function(event) {
         setCookie("instructor_view_state", "off", cookie_lifetime);
     }
 // Hide permanently
-//$(".self_study_text").show();
-//$(".instructor_notes").hide();
+$(".self_study_text").show();
+$(".instructor_notes").hide();
 });
 
 
