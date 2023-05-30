@@ -23,10 +23,10 @@ OpenMP offers several types of work sharing constructs that assist in automating
 - The work-sharing constructs do not create new threads, instead they use a team of threads created by the `parallel` directive.
 - At the end of a work-sharing construct, a program will wait for all threads to complete. This behavior is called an *implied barrier*.
 
-### The *omp for*
-- The *omp for* construct divides loop iterations across the thread team.
+### The *omp parallel for*
+- The `parallel for` construct divides loop iterations across the thread team.
 - It must be used after the parallel region has been initiated.  Otherwise, the program will run serially on a single processor.
-- Each thread executes the same instructions. 
+- Each thread working on a `parallel for` loop executes the same instructions. 
 - The *omp for* represents a type of parallelism known as *data parallelism*.
 
 ~~~
@@ -57,6 +57,7 @@ OpenMP offers several types of work sharing constructs that assist in automating
 >ulimit -s unlimited
 >~~~
 >{:.language-bash}
+>
 >- On compute nodes stack is unlimited
 >
 >~~~
@@ -87,10 +88,10 @@ OpenMP offers several types of work sharing constructs that assist in automating
 {: .callout}
 
 ### The *omp sections*
-- The *omp sections* construct breaks work into separate, discrete sections.
+- The `omp sections` construct breaks the work down into distinct, discrete parts.
 - It is is a non-iterative work-sharing construct.
-- It specifies that the enclosed sections of code are to be divided among the threads in the team. Independent *section* directives are nested within a *sections* directive. Each *section* contains different instructions and is executed once by a thread.
-- It is possible for a thread to execute more than one *section*.
+- It specifies that the enclosed sections of code are to be divided among the threads in the team. Independent `section` directives are nested within a `sections` directive. Each `section` contains different instructions and is executed once by a thread.
+- It is possible for a thread to execute more than one `section`.
 - Sections can be used to implement a *functional parallelism* (concurrent execution of different tasks).
 
 ~~~
@@ -111,17 +112,16 @@ OpenMP offers several types of work sharing constructs that assist in automating
 ~~~
 {: .language-c}
 
-Here *nowait* clause means that the program will not wait at the end of the *sections* block for all threads to finish.
+Here `nowait` clause means that the program will not wait at the end of the `sections` block for all threads to finish.
 
 > ## Exercise
-> Compile the file *sections.c* and run it on a different number of CPUs. 
+> Compile the file [sections.c](https://github.com/ssvassiliev/ACENET_Summer_School_OpenMP_2023/raw/gh-pages/code/sections.c) and run it on a different number of CPUs. 
 > Start with 1 CPU:
 >~~~
 > srun -c1 ./a.out
 >~~~
 >{:.language-bash}
->
-This example has two sections and the program prints out which threads are doing them.
+>This example has two sections and the program prints out which threads are doing them.
 > - What happens if the number of threads and the number of *sections* are different?
 > - More threads than *sections*?
 > - Less threads than sections?
@@ -144,4 +144,8 @@ This example has two sections and the program prints out which threads are doing
 >1. One thread will execute each iteration sequentially
 >2. 8 threads will distribute iteration space approximately N/8 per thread
 >3. Each of 8 threads will execute each iteration sequentially overwriting values of C.
+>
+> > ## Solution
+> > The correct answer is 3.
+> {: .solution}
 {: .challenge}

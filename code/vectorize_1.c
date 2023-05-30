@@ -5,7 +5,7 @@
 
 int main()
 {
-        struct time#spec ts_start, ts_end;
+        struct timespec ts_start, ts_end;
         float time_total;
 
         int i,j;

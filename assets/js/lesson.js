@@ -105,6 +105,7 @@ function init_instructor_mode_from_cookie() {
 // Initialize instructor_notes as hidden.
 init_instructor_mode_from_cookie()
 
+
 // Toogle between self_study_text and instructor_notes
 $(".toggle_instructor_view").click(function(event) {
     if ($('.toggle_instructor_view > label > input').is(":checked")) {
@@ -116,4 +117,9 @@ $(".toggle_instructor_view").click(function(event) {
         $(".instructor_notes").hide();
         setCookie("instructor_view_state", "off", cookie_lifetime);
     }
+// Hide permanently
+//$(".self_study_text").show();
+//$(".instructor_notes").hide();
 });
+
+

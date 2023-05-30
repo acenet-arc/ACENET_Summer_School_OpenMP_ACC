@@ -45,7 +45,7 @@ OpenMP is supported by all commonly used compilers, such as gcc, clang, Intel, N
 For an overview of the past, present and future of the OpenMP read the paper ["The Ongoing Evolution of OpenMP"](https://ieeexplore.ieee.org/document/8434208).
 
 ### OpenMP Execution Model
-OpenMP gives programmers full control over parallelization. Unlike automatic parallelization, it requires explicit programming. Among the guiding principles of OpenMP is that performance should not come at the expense of ease of coding and maintenance. 
+OpenMP gives programmers full control over parallelization. Unlike automatic parallelization, it requires explicit programming. In OpenMP, one of the key principles is that ease of maintenance and coding should not be sacrificed in the interest of performance.
 {: .instructor_notes}
 
 How does OpenMP assist programmers in using multiple CPU cores efficiently?

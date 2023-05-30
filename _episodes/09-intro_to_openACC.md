@@ -11,12 +11,6 @@ keypoints:
 - "OpenACC offers a quick path to accelerated computing with less programming effort"
 ---
 
-## Introduction
-As we learned in the *General Parallel Computing* lesson increasing performance is based on various strategies such as CPU frequency, multicore processing, vectorization, parallel distributed computing. At present performance is mostly limited by power consumption. Accelerators such as Nvidia Tesla GPUs are based on a very high level of parallelism and are capable to reach high performance at relatively low power consumption.  GPUs can deliver very high performance per compute node and today, GPGPUs are the choice of hardware to accelerate computational workloads in HPC settings. Let's look at the GPU architecture to understand why they are a good fit for various types of HPC jobs.
-
-### The GPU Architecture 
-CPUs are optimized to carry out tasks as quick as possible, while keeping the ability to quickly switch between operations. It’s nature is all about processing tasks in a serialized way. GPUs achieve high throughput by trading single-threaded performance in favor of several orders in magnitude more parallelism.
-
 ### Tools for Programming GPUs
  There are several tools available for programming GPU.
  - CUDA. CUDA is NVIDIA-specific programming model and language. You can get the most out of your GPU with CUDA. CUDA-C and CUDA-Fortran compilers are available. Difficult to program, porting existing C/C++ or Fortran code onto the GPU with CUDA requires significant code refactoring.
@@ -138,14 +132,13 @@ int main(int argc, char **argv)
         fwrite(U[j], m * sizeof(float), 1, output_unit);
     fclose(output_unit);
 }
-
 ~~~
 {:.language-c}
 
 #### Performance of the Serial Code
 Compile and run
 ~~~
-gcc laplace2d.c -lm -O3
+gcc laplace2d_template.c -lm -O3
 ~~~
 {:.language-bash}
 
@@ -159,7 +152,7 @@ gcc laplace2d.c -lm -O3 -fopt-info-vec-missed
 #### Performance of the Auto-vectorized Code
 Try Intel compiler:
 ~~~
-module load StdEnv/2020 intel/2021.2.0
+module load intel/2022.1.0
 icc -qopt-report=1 -qopt-report-phase=vec -O3 laplace2d.c
 ~~~
 {:.language-bash}

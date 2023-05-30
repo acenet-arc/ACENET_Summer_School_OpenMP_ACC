@@ -42,19 +42,40 @@ We will start by looking at the `parallel` directive. This directive forks threa
 - Use the `parallel` directive
 {: .self_study_text}
 
+Begin with the file `hello_template.c`.
+
+<div class="gitfile" markdown="1">
+
 ~~~
-/* --- File: hello_world.c --- */
 #include <stdio.h>
 #include <stdlib.h>
-#include <omp.h>
 
 int main(int argc, char **argv) {
-
-#pragma omp parallel
    printf("Hello World\n");
 }
 ~~~
+{:.language-c}
+[hello_template.c](https://github.com/ssvassiliev/ACENET_Summer_School_OpenMP_2023/raw/gh-pages/code/hello_template.c)
+</div>
+
+
+Make a copy named `hello_omp.c`. You will need to add the following code to `hello_omp.c` to make it parallel:
+
+<div class="gitfile" markdown="1">
+
+~~~
+...
+include <omp.h>
+...
+int main(int argc, char **argv) {
+#pragma omp parallel
+...
+}
+~~~
 {: .language-c}
+
+hello_omp.c
+</div>
 
 #### How to compile an OpenMP program?
 You will need to add an extra flag `-fopenmp` to your compiler command to make it treat the source code as OpenMP code.
@@ -64,8 +85,8 @@ You will need to add an extra flag `-fopenmp` to your compiler command to make i
 {: .self_study_text}
 
 ~~~
-gcc -fopenmp -o hello hello.c
-icc -qopenmp -o hello hello.c
+gcc -fopenmp -o hello hello_omp.c
+icc -qopenmp -o hello hello_omp.c
 ~~~
 {: .language-bash}
 
@@ -78,7 +99,7 @@ If you run this program, the output should say "Hello World" several times. Can 
 Based on the OpenMP standard, this is determined by the implementation. OpenMP will normally look at the machine it is running on to determine how many cores are available. Then it will launch a thread for each core.
 {: .instructor_notes}
 
-You can control the number of threads by setting the environment variable OMP_NUM_THREADS. To create only three threads, for example, you would do the following:
+You can control the number of threads by setting the environment variable `OMP_NUM_THREADS`. To create only three threads, for example, you would do the following:
 {: .instructor_notes}
 
 - Use the environment variable `OMP_NUM_THREADS` to control the number of threads.
@@ -114,16 +135,18 @@ Since threads are a programming abstraction, there is no direct relationship bet
 > ~~~
 > #!/bin/bash
 > #SBATCH --time=1:0:0
-> #SBATCH --cpus-per-task=3
+> #SBATCH --cpus-per-task=4
 > #SBATCH --mem-per-cpu=1000
 > export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 > ./hello
 > ~~~
 > {: .language-bash}
 >
-> You could also ask for an interactive session with multiple cores like so:
+> Submission scripts are submitted to Slurm with the sbatch command. 
+>
+> You can also ask for an interactive session with multiple cores like so:
 > ~~~
-> [user45@login1 ~]$ salloc --mem-per-cpu=1000 --cpus-per-task=3 --time=1:0:0
+> [user45@login1 ~]$ salloc --mem-per-cpu=1000 --cpus-per-task=2 --time=1:0:0
 > ~~~
 > {: .language-bash}
 > ~~~
@@ -146,19 +169,6 @@ Since threads are a programming abstraction, there is no direct relationship bet
 {: .callout}
 
 ## Identifying threads
-> ## Download and Unpack the Code.
->
-> If you have not yet done so, download and unpack the code:
-> ~~~
-> cd ~/scratch
-> mkdir workshop
-> cd workshop
-> wget https://github.com/acenet-arc/ACENET_Summer_School_OpenMP_ACC/raw/gh-pages/code/omp_code.tar 
-> tar -xf omp_code.tar
-> ~~~
-> {: .language-bash}
-{: .callout}
-
 #### How can we tell which thread is doing what?   
 The OpenMP specification includes a number of functions that are made available through the included header file `omp.h`. One of those functions is `omp_get_thread_num()` that returns the ID of the currently running thread.
 {: .instructor_notes}
@@ -166,23 +176,22 @@ The OpenMP specification includes a number of functions that are made available 
 - The function `omp_get_thread_num()` returns the thread ID of the currently running process.
 {: .self_study_text}
 
+<div class="gitfile" markdown="1">
+
 ~~~
-/* --- File hello_world_omp.c --- */
-#include <stdio.h>
-#include <stdlib.h>
-#include <omp.h>
-
-int main(int argc, char **argv) {
-   int id;
-
+...
 #pragma omp parallel
    {
-     id = omp_get_thread_num();
+     int id = omp_get_thread_num();
      printf("Hello World from thread %d\n", id);
    }
-}
+
+...
 ~~~
 {: .language-c}
+
+hello_omp.c
+</div>
 
 With this code, each thread's output will be tagged with its unique ID, a number between 0 and (number_of_threads - 1).
 {: .instructor_notes}
@@ -207,22 +216,21 @@ With this code, each thread's output will be tagged with its unique ID, a number
 >
 > Hint: When compiler is run with the `-fopenmp` option it defines preprocessor macro `_OPENMP`, so you may use the `#ifdef _OPENMP` preprocessor directive to tell compiler to only process the line containing `omp_get_thread_num()` function if the macro is defined.
 > > ## Solution
+> ><div class="gitfile" markdown="1">
+> >
 > > ~~~
 > >
-> > #include <stdio.h>
-> > #include <stdlib.h>
-> > #include <omp.h>
-> >
-> > int main(int argc, char **argv) {
-> >   #pragma omp parallel
+> >   ...
 > >   #ifdef _OPENMP
 > >   printf("Hello World %i\n", omp_get_thread_num());
 > >   #else
 > >   printf("Hello World \n");
 > >   #endif
-> > }
+> >   ...
 > > ~~~
 > > {: .language-c}
+> > hello_omp.c  
+> > </div>
 > {: .solution}
 {: .challenge}
 
@@ -247,8 +255,7 @@ In our example each thread of the parallel hello program just printed its ID. Wh
 - By using a *single* directive, we can run a block of code by just one thread, the thread that encounters it first.
 {: .self_study_text}
 
-There are times when you may need to drop out of a parallel section in order to have a single one of the threads executing some code. A code block associated with the `single` directive will be executed by only the first thread to come across it.
-It might be useful for writing results from a parallel computation into a file, for example.
+It is sometimes necessary to drop out of a parallel section so that a single thread can run some code. A code block associated with the `single` directive will be executed by only the first thread to come across it. An example of its use would be to write results from a parallel computation into a file.
 {: .instructor_notes}
 
 View more information about the [*omp single* directive](https://www.openmp.org/spec-html/5.0/openmpsu38.html)
@@ -259,6 +266,8 @@ View more information about the [*omp single* directive](https://www.openmp.org/
 > You should be able to do it by adding only one line.
 > Here's a (rather dense) reference guide in which you can look for ideas:
 > [Directives and Constructs for C/C++](https://www.openmp.org/wp-content/uploads/OpenMP-4.5-1115-CPP-web.pdf).
+>
+> <div class="gitfile" markdown="1">
 >
 > ~~~
 > #include <stdio.h>
@@ -277,27 +286,23 @@ View more information about the [*omp single* directive](https://www.openmp.org/
 > }
 > ~~~
 > {:.language-c}
+> [first_thread_template.c](https://github.com/ssvassiliev/ACENET_Summer_School_OpenMP_2023/raw/gh-pages/code/first_thread_template.c )
+> </div>
+>
 > {: .source}
 >
 > > ## Solution
+> ><div class="gitfile" markdown="1">
+> >
 > > ~~~
-> > #include <stdio.h>
-> > #include <stdlib.h>
-> > #include <omp.h>
-> >
-> > int main(int argc, char **argv) {
-> >    int id, size;
-> >
-> >    #pragma omp parallel private(id,size)
-> >    {
-> >       size = omp_get_num_threads();
+> > ...
 > >       id = omp_get_thread_num();
 > >       #pragma omp single
-> >       printf("This thread %d of %d is first\n", id, size);
-> >    }
-> > }
+> > ...
 > > ~~~
 > > {:.language-c}
+> > first_thread.c  
+> > </div>
 > {: .solution}
 {: .challenge}
 

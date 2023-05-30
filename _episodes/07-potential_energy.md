@@ -11,10 +11,12 @@ keypoints:
 - "Writing vectorization-friendly code can take additional time but is mostly worth the effort"
 - "Different loop scheduling may compensate for unbalanced loop iterations"
 ---
-## Introduction
+
 Calculating the potential energy of many-body systems is a common problem arising in many disciplines. The algorithms for the computation of gravitational potential are used in physics and astronomy. Molecular modeling and simulations need to evaluate electrostatic potential describing interactions between atoms. The algorithms for the calculation of both types of interactions are similar. They both involve calculating the distance matrix - the matrix of distances between all pairs of interacting particles.  Applications from many different fields need distance matrices. For example, dimensionality reduction in machine learning and statistics, wireless sensor network localization, clustering analysis, etc.   
+{:.instructor_notes}
 
 As the following parallelization example, we will consider calculating the total electrostatic potential energy of a set of charges in 3D. As usual, we start with the serial code, parallelize it and see how much faster we can solve this problem in parallel. Recollect that AVX512 CPU cores can apply instructions to 16 floating-point numbers, so the parallel version using ten CPU cores theoretically should run 10x16=160 times faster than a serial code. This speedup is, however, a theoretical maximum assuming negligible parallelization overhead and 100% parallel code. What real-life speedup will we be able to get?
+{:.instructor_notes}
 
 ## The Algorithm
 To compute total electrostatic potential energy we need to sum interactions between all pairs of charges:
@@ -27,8 +29,10 @@ Let's consider a simple nano crystal particle with a cubic structure.
 - The charges of atoms are randomly assigned with values between -5 and 5 a.u.
 
 Let's start with the following serial code:
+
+<div class="gitfile" markdown="1">
+
 ~~~
-/* --- File elect_energy.c --- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -86,10 +90,17 @@ int main(int argc, char **argv)
 }
 ~~~
 {:.language-c}
+[elect_energy_template.c](https://github.com/ssvassiliev/ACENET_Summer_School_OpenMP_2023/raw/gh-pages/code/elect_energy_template.c)
+</div>
+
+Our goal is to speed up calculation leveraging OpenMP and SIMD instructions (vectorization).
+{:.self_study_text}
 
 Our goal is to speed up calculation leveraging both levels of parallelism available in modern CPUs: OpenMP to execute the code concurrently on several CPU cores and SIMD instructions enabling each CPU core to operate on multiple data elements simultaneously (vectorization). 
+{:.instructor_notes}
 
 Writing vectorized code can take additional time but is mostly worth the effort, because the performance increase may be substantial. Modern C and Fortran compilers are capable to automatically generate SIMD instructions. However, not all code can be auto-vectorized as there are many potential obstacles for auto-vectorization. The discussing detailed guidelines to writing vectorization-friendly code are outside the scope of this workshop. In this session we will briefly look at the performance benefits of vectorization learn how to use auto-vectorization compiler feature, and how to get information about details of auto-vectorization results. 
+{:.instructor_notes}
 
 ## Performance Considerations 
 ### Serial Performance
@@ -108,8 +119,8 @@ For this we will use a couple of new compiler options:
 - turn on vectorization report *(-qopt-report-phase=vec)*. 
 
 ~~~
-module load StdEnv/2020 intel/2021.2.0
-icc -qopt-report=1 -qopt-report-phase=vec -O3 -no-vec elect_energy.c 
+module load intel/2022.1.0
+icc -qopt-report=1 -qopt-report-phase=vec -O3 -no-vec elect_energy_template.c 
 srun -c1 ./a.out
 ~~~
 {:.language-bash}
@@ -147,6 +158,7 @@ The runtime of the serial version is about 80 sec on a real cluster with Skylake
 ### Parallel Performance
 #### Using Automatic Vectorization
 Next we will use use the auto-vectorizer in the compiler. This means do nothing except ensuring that the coding will not prevent vectorization. Many things, can prevent automatic vectorization or produce suboptimal vectorized code. 
+{:.instructor_notes}
 
 - Recompile the code without *-no-vec* option. 
 
@@ -177,6 +189,7 @@ Now the program runs in 15.7 sec (on the real cluster), this is better (5x speed
 
 #### Using Intel's Advanced Vector Extensions (AVX) Intrinsic Functions.
 This is not too complicated, and worth doing because you will be able to decide how you data is organized, moved in and out of vector processing units and what AVX instructions are used for calculations. With Intrinsic Functions, you are fully responsible for design and optimization of the algorithm, compiler will follow your commands.
+{:.instructor_notes}
 
 The examples of the same program written with AVX2 and AVX-512 Intrinsics are in the files *elect_energy_avx2.c* and *elect_energy_avx512.c*, respectively. The code is well annotated with explanations of all statements. 
 
@@ -217,11 +230,16 @@ avx2              | 7.7  | 10.5
 avx512            | 4.58 | 17.7 
 
 Compilers are very conservative in automatic vectorization and in general they will use the safest solution. If compiler suspects data dependency, it will not parallelize code. The last thing compiler developers want is for a program to give the wrong results! But you can analyze the code, if needed modify it to eliminate data dependencies and try different parallelization strategies to optimize the performance.
+{:.instructor_notes}
 
 #### What Loops can be Vectorized?
 - The number of iterations must be known (at runtime, not at compilation time) and remain constant for the duration of the loop. 
 - The loop must have single entry and single exit. For example no data-dependent exit.
-- The loop must have straight-line code. Because SIMD instructions perform the same operation on data elements it is not possible to switch instructions for different iterations. The exception is *if* statements that can be implemented as masks. For example the calculation is performed for all data elements, but the result is stored only for those elements for which the mask evaluates to true. 
+- The loop must have straight-line code. 
+
+Because SIMD instructions perform the same operation on data elements it is not possible to switch instructions for different iterations. The exception is *if* statements that can be implemented as masks. For example the calculation is performed for all data elements, but the result is stored only for those elements for which the mask evaluates to true.
+{:.instructor_notes}
+
 - No function calls are allowed. Only intrinsic vectorized math functions or functions that can be inlined are allowed.
  
 ### Adding OpenMP Parallelization 
@@ -254,13 +272,21 @@ avx2               | 0.764  | 106.3
 avx512             | 0.458  | 177.3
 
 ### OpenMP Scheduling
+
+- In *static* scheduling all iterations are allocated to threads before they execute any loop iterations.
+- In *dynamic* scheduling, OpenMP assigns one iteration to each thread. Threads that complete their iteration will be assigned the next iteration that hasn’t been executed yet. 
+{:.self_study_text}
+
 OpenMP automatically partitions the iterations of a *parallel for* loop. By default it divides all iterations in a number of chunks equal to the number of threads. The number of iterations in each chunk is the same, and each thread is getting one chunk to execute. This is *static* scheduling, in which all iterations are allocated to threads before they execute any loop iterations. However, a *static* schedule can be non-optimal. This is the case when the different iterations need different amounts of time. This is true for our program computing potential. As we are computing triangular part of the interaction matrix *static* scheduling with the default *chunk size* will lead to uneven load.
+{:.instructor_notes}
 
 This program can be improved with a *dynamic* schedule. In *dynamic* scheduling, OpenMP assigns one iteration to each thread. Threads that complete their iteration will be assigned the next iteration that hasn’t been executed yet. The allocation process continues until all the iterations have been distributed to threads.
+{:.instructor_notes}
 
 - If *dynamic* scheduling balances load why would we want to use *static* scheduling at all? 
 
 The problem is that here is some overhead to *dynamic* scheduling. After each iteration, the threads must stop and receive a new value of the loop variable to use for its next iteration. Thus, there's a tradeoff between overhead and load balancing.
+{:.instructor_notes}
 
 - Static scheduling has low overhead but may be badly balanced
 - Dynamic scheduling has higher overhead.
@@ -291,7 +317,7 @@ Let's add a `schedule(dynamic)` or `schedule(static,100)` clause and see what ha
 > 
 > int main()
 > {
->         struct time#spec ts_start, ts_end;
+>         struct timespec ts_start, ts_end;
 >         float time_total;
 > 
 >         int i,j;
