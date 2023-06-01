@@ -65,7 +65,7 @@ Make a copy named `hello_omp.c`. You will need to add the following code to `hel
 
 ~~~
 ...
-include <omp.h>
+#include <omp.h>
 ...
 int main(int argc, char **argv) {
 #pragma omp parallel

@@ -259,7 +259,6 @@ preprocess_data(A);
 #pragma omp task depend(out:B)/* task B */
 preprocess_data(B);
 
-#pragma omp taskwait
 #pragma omp task depend(in:A)/* task C */
 compute_stats(A);
 #pragma omp task depend(in:B)/* task D */
