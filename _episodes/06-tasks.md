@@ -228,9 +228,7 @@ In some cases a task may depend on another task, but not on all generated tasks.
 preprocess_data(A);
 #pragma omp task /* task B */
 preprocess_data(B);
-
 #pragma omp taskwait
-
 #pragma omp task /* task C */
 compute_stats(A);
 #pragma omp task /* task D */
@@ -256,12 +254,11 @@ The previous example rewritten with task dependencies will be:
 ~~~
 #pragma omp task depend(out:A) /* task A */
 preprocess_data(A);
-#pragma omp task depend(out:B)/* task B */
+#pragma omp task depend(out:B) /* task B */
 preprocess_data(B);
-
-#pragma omp task depend(in:A)/* task C */
+#pragma omp task depend(in:A) /* task C */
 compute_stats(A);
-#pragma omp task depend(in:B)/* task D */
+#pragma omp task depend(in:B) /* task D */
 compute_stats(B);
 ~~~
 {:.language-c}
@@ -286,8 +283,9 @@ The depend clause enforces additional constraints on the scheduling of tasks or 
 - You should be able to correct the code  by only adding the *task depend* clause. 
 - Start with the incorrectly parallelized code:
 >
+> <div class="gitfile" markdown="1">
+>
 > ~~~
->/* --- File task_depend_omp.c --- */
 >#include <stdlib.h>
 >#include <stdio.h>
 >
@@ -338,6 +336,9 @@ The depend clause enforces additional constraints on the scheduling of tasks or 
 >}
 > ~~~
 > {:.language-c}
+> [task_depend_omp.c](https://github.com/ssvassiliev/ACENET_Summer_School_OpenMP_2023/raw/gh-pages/code/task_depend_omp.c)
+</div>
+
 > This example works correctly with gcc/9.3.0 but not with gcc/10 or gcc/11. 
 > > ## solution
 > > Parallel threads are writing data, so the dependence should be *depend(out:y)*
@@ -356,8 +357,9 @@ The depend clause enforces additional constraints on the scheduling of tasks or 
 > <img src="../fig/fib.png" width="300">
 >The *taskwait* directive ensures that both tasks generated in *fib( )* compute *i* and *j* before return.
 >
+> <div class="gitfile" markdown="1">
+>
 >~~~
->/* --- File fib_omp.c ---*/
 >#include <stdio.h>
 >#include <stdlib.h>
 >#include <omp.h>
@@ -395,10 +397,12 @@ The depend clause enforces additional constraints on the scheduling of tasks or 
 >}
 >~~~
 >{:.language-c}
+> [fib_omp.c](https://github.com/ssvassiliev/ACENET_Summer_School_OpenMP_2023/raw/gh-pages/code/fib_omp.c)
+> </div>
 {:.callout}
 
 > ## Tasks?
-> How do tasks work with different number of threads?
+> How do tasks work with different number of threads? Can OpenMP use more than one thread to execute a task?
 >> ## Solution
 >>Each task region will be executed by one thread. OpenMP will not use more threads to execute a single task. 
 >>
@@ -418,12 +422,12 @@ The depend clause enforces additional constraints on the scheduling of tasks or 
 | int omp_get_thread_num() <br> int omp_get_num_threads() | Create threads with a parallel region and split up the work using the number of threads and thread ID|
 |double omp_get_wtime()|Speedup and Amdahl's law.<br>False Sharing and other performance issues|
 |setenv OMP_NUM_THREADS N|Internal control variables. Setting the default number of threads with an environment variable
-|#pragma omp barrier<br> #pragma omp critical|Synchronization and race conditions. Revisit interleaved execution.|
+|#pragma omp barrier<br> #pragma omp critical|Synchronization and race conditions.|
 |#pragma omp for <br>#pragma omp parallel for|Worksharing, parallel loops, loop carried dependencies|
 |reduction(op:list)|Reductions of values across a team of threads|
 |schedule(dynamic [,chunk])<br>schedule (static [,chunk])|Loop schedules, loop overheads and load balance|
 |private(list)<br> firstprivate(list)<br> shared(list)|Data environment|
-|nowait|Disabling implied barriers on workshare constructs, the high cost of barriers. The flush concept (but not the concept)|
+|nowait|Disabling implied barriers on workshare constructs, the high cost of barriers.|
 |#pragma omp single|Workshare with a single thread|
 |#pragma omp task<br>#pragma omp taskwait|Tasks including the data environment for tasks.|
 

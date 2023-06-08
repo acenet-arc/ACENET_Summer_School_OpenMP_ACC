@@ -3,16 +3,15 @@ title: "Programming GPUs with OpenMP"
 teaching: 35
 exercises: 5
 questions:
-- "How to program GPU?"
+- "How to program GPU with OpenMP?"
 objectives:
 - "Learn about tools available for programming GPU"
-- "Learn about programming GPU with openACC"
+- "Learn about programming GPU with openMP"
 keypoints:
-- "OpenACC offers a quick path to accelerated computing with less programming effort"
+- "OpenMP offers a quick path to accelerated computing with less programming effort"
 ---
 
 ## Introduction to OpenMP Device Offload
-
 As we learned in the *General Parallel Computing* lesson increasing performance is based on various strategies such as CPU frequency, multicore processing, vectorization, parallel distributed computing. At present performance is mostly limited by power consumption. Accelerators such as Nvidia Tesla GPUs are based on a very high level of parallelism and are capable to reach high performance at relatively low power consumption.  GPUs can deliver very high performance per compute node and today, GPGPUs are the choice of hardware to accelerate computational workloads in HPC settings. Let's look at the GPU architecture to understand why they are a good fit for various types of HPC jobs.
 {: .instructor_notes}
 
@@ -48,6 +47,15 @@ CUDA cores are only a part of what Nvidia GPUs offer. Additionally, they are equ
     - 1 AVX-512 vector unit per core can process 16 FP32 numbers at a time.
 
 In summary, GPU architecture enables to process massive amounts of data simultaneously at extremely fast speeds.
+
+### Tools for Programming GPUs
+ There are several tools available for programming GPU.
+ - CUDA. CUDA is NVIDIA-specific programming model and language. You can get the most out of your GPU with CUDA. CUDA-C and CUDA-Fortran compilers are available. Difficult to program, porting existing C/C++ or Fortran code onto the GPU with CUDA requires significant code refactoring.
+ - OpenMP via the `target` construct. [OpenMP on GPUs](https://on-demand.gputechconf.com/gtc/2018/presentation/s8344-openmp-on-gpus-first-experiences-and-best-practices.pdf)
+ - OpenCL. Open Computing Language is a framework that allows to write programs executing across platforms consisting of CPU, GPU, FPGA, and other hardware accelerators. It is very complex and hard to program. Adoption of OpenCL is still low.
+ - PyCuDA. Gives access to CUDA functionality from Python code.
+ - OpenACC. OpenACC offers a quick path to accelerated computing with less programming effort.
+
 
 ### The OpenMP GPU programming model
 GPU programming with OpenMP is based on a host-device model.
@@ -219,7 +227,7 @@ libgomp: cuCtxSynchronize error: an illegal memory access was encountered
 
 The compiler created target task and offloaded it to a GPU, but the data is on the host!
 
-### The OpenMP Map directive.
+### Moving Data Between Hosts and Devices: the OpenMP Map Directive.
 
 #### map(map-type: list[0:N])
 - **map-type** may be **to**, **from**, **tofrom**, or **alloc**. The clause defines how the variables in list are moved between the host and the device.

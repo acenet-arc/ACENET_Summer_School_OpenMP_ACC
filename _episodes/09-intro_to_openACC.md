@@ -3,21 +3,13 @@ title: "Introduction to GPU Programming with OpenACC"
 teaching: 35
 exercises: 5
 questions:
-- "How to program GPU?"
+- "How to program GPU with OpenACC?"
 objectives:
-- "Learn about tools available for programming GPU"
 - "Learn about programming GPU with openACC"
 keypoints:
 - "OpenACC offers a quick path to accelerated computing with less programming effort"
 ---
 
-### Tools for Programming GPUs
- There are several tools available for programming GPU.
- - CUDA. CUDA is NVIDIA-specific programming model and language. You can get the most out of your GPU with CUDA. CUDA-C and CUDA-Fortran compilers are available. Difficult to program, porting existing C/C++ or Fortran code onto the GPU with CUDA requires significant code refactoring.
- - OpenMP via the `target` construct. [OpenMP on GPUs](https://on-demand.gputechconf.com/gtc/2018/presentation/s8344-openmp-on-gpus-first-experiences-and-best-practices.pdf)
- - OpenCL. Open Computing Language is a framework that allows to write programs executing across platforms consisting of CPU, GPU, FPGA, and other hardware accelerators. It is very complex and hard to program. Adoption of OpenCL is still low.
- - PyCuDA. Gives access to CUDA functionality from Python code.
- - OpenACC. OpenACC offers a quick path to accelerated computing with less programming effort.
 
 Examples of OpenACC accelerated applications: 
 - VASP 6 (*ab initio* atomic scale modeling).[NVIDIA GPU Accelerated VASP 6 uses OpenACC to Deliver 15X More Performance](https://developer.nvidia.com/blog/nvidia-gpu-accelerated-vasp-6-uses-openacc-to-deliver-15x-more-performance/)
